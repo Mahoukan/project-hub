@@ -168,3 +168,17 @@ a {
     grid-template-columns: 1fr;
   }
 }
+
+.project-header {
+  position: relative;
+  z-index: 20;
+}
+
+.project-stage {
+  position: relative;
+  z-index: 1;
+}
+
+.project-stage canvas {
+  display: block;
+}
