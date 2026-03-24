@@ -1,67 +1,76 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Polygon Network</title>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>Polygon Network</title>
 
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+            rel="stylesheet">
 
-  <link rel="stylesheet" href="../../css/project-layout.css?v=1" />
+        <link rel="stylesheet" href="../../css/project-layout.css" />
+        <link rel="stylesheet" href="./style.css" />
 
-  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
-</head>
-<body>
-  <div class="project-shell">
-    <header class="project-header">
-      <a class="back-link" href="../../index.html">← Back to Hub</a>
+        <script
+            src="https://cdn.jsdelivr.net/npm/p5@1.9.4/lib/p5.min.js"></script>
+    </head>
+    <body>
+        <div class="project-shell">
+            <header class="project-header">
+                <a class="back-link" href="../../index.html">← Back to Hub</a>
 
-      <div class="project-meta">
-        <h1>Polygon Network</h1>
-        <p>A rotating network of points with colourful connecting lines.</p>
-      </div>
-    </header>
+                <div class="project-meta">
+                    <h1>Polygon Network</h1>
+                    <p>A rotating network of points with colourful connecting
+                        lines.</p>
+                </div>
+            </header>
 
-    <main class="project-main">
-      <section class="project-stage" id="project-stage"></section>
+            <main class="project-main">
+                <section class="project-stage" id="project-stage"></section>
 
-      <aside class="project-sidebar">
-        <div class="sidebar-block">
-          <h2>About</h2>
-          <p>
-            This project creates a rotating set of points around a circle and
-            connects every point to every other point, producing changing geometric patterns.
-          </p>
+                <aside class="project-sidebar">
+                    <div class="sidebar-block">
+                        <h2>About</h2>
+                        <p>
+                            This project creates a rotating set of points around
+                            a circle and
+                            connects every point to every other point, producing
+                            changing geometric patterns.
+                        </p>
+                    </div>
+
+                    <div class="sidebar-block">
+                        <h2>Controls</h2>
+                        <ul>
+                            <li>Use the sliders to change speed and number of
+                                points</li>
+                            <li>Click to add one point</li>
+                            <li>Arrow keys adjust the point count</li>
+                            <li>Space or R pauses and resumes the animation</li>
+                            <li>T toggles trail mode</li>
+                            <li>F toggles polygon fill</li>
+                            <li>S saves an image</li>
+                            <li>H hides or shows the help and sliders</li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-block">
+                        <h2>Tags</h2>
+                        <div class="sidebar-tags">
+                            <span class="sidebar-tag">maths</span>
+                            <span class="sidebar-tag">visual</span>
+                            <span class="sidebar-tag">interactive</span>
+                        </div>
+                    </div>
+                </aside>
+            </main>
         </div>
-
-        <div class="sidebar-block">
-          <h2>Controls</h2>
-          <ul>
-            <li>Use the sliders to change speed and number of points</li>
-            <li>Click to add one point</li>
-            <li>Arrow keys adjust the point count</li>
-            <li>Space or R pauses and resumes the animation</li>
-            <li>T toggles trail mode</li>
-            <li>F toggles polygon fill</li>
-            <li>S saves an image</li>
-            <li>H hides or shows the help and sliders</li>
-          </ul>
-        </div>
-
-        <div class="sidebar-block">
-          <h2>Tags</h2>
-          <div class="sidebar-tags">
-            <span class="sidebar-tag">maths</span>
-            <span class="sidebar-tag">visual</span>
-            <span class="sidebar-tag">interactive</span>
-          </div>
-        </div>
-      </aside>
-    </main>
-  </div>
-
-  <script src="./sketch.js"></script>
-</body>
+        <script src="../../js/project-page.js"></script>
+        <script src="../../js/project-boot.js"></script>
+        <script src="./sketch.js"></script>
+    </body>
 </html>
