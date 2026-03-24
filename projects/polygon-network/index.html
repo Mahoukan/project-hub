@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Polygon Network</title>
+    <title>Project</title>
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,54 +15,53 @@
     <link rel="stylesheet" href="../../css/project-layout.css" />
     <link rel="stylesheet" href="./style.css" />
   </head>
-  <body>
+  <body data-project-slug="polygon-network">
     <div class="project-shell">
       <header class="project-header">
         <a class="back-link" href="../../index.html">← Back to Hub</a>
 
         <div class="project-meta">
-          <h1>Polygon Network</h1>
-          <p>A rotating network of points with colourful connecting lines.</p>
+          <h1 id="project-title">Loading...</h1>
+          <p id="project-description">Loading project description...</p>
         </div>
       </header>
 
       <main class="project-main">
         <section class="project-stage" id="project-stage">
           <canvas id="polygon-canvas"></canvas>
+
+          <!-- optional overlay / fallback title target -->
+          <div class="project-overlay-title" id="overlay-title" hidden></div>
         </section>
 
         <aside class="project-sidebar">
           <div class="sidebar-block">
             <h2>About</h2>
-            <p>
-              This project creates a rotating set of points around a circle and
-              connects every point to every other point, producing
-              changing geometric patterns.
-            </p>
+            <p id="project-long-description">Loading project details...</p>
+          </div>
+
+          <div class="sidebar-block">
+            <h2>Status</h2>
+            <p id="project-status">Loading...</p>
           </div>
 
           <div class="sidebar-block">
             <h2>Controls</h2>
-            <ul>
-              <li>Use the canvas panel sliders to change speed and number of points</li>
-              <li>Click to add one point</li>
-              <li>Arrow keys adjust the point count</li>
-              <li>Space pauses and resumes the animation</li>
-              <li>R resets the rotation of the animation</li>
-              <li>T toggles trail mode</li>
-              <li>F toggles polygon fill</li>
-              <li>S saves an image</li>
-              <li>H hides or shows the panel</li>
+            <ul id="project-controls">
+              <li>Loading controls...</li>
+            </ul>
+          </div>
+
+          <div class="sidebar-block">
+            <h2>Notes</h2>
+            <ul id="project-notes">
+              <li>Loading notes...</li>
             </ul>
           </div>
 
           <div class="sidebar-block">
             <h2>Tags</h2>
-            <div class="sidebar-tags">
-              <span class="sidebar-tag">maths</span>
-              <span class="sidebar-tag">visual</span>
-              <span class="sidebar-tag">interactive</span>
-            </div>
+            <div class="sidebar-tags" id="project-tags"></div>
           </div>
         </aside>
       </main>

@@ -41,7 +41,13 @@ let width = 0;
 let height = 0;
 let dpr = Math.max(1, window.devicePixelRatio || 1);
 
-document.addEventListener("DOMContentLoaded", init);
+
+document.addEventListener("DOMContentLoaded", () => {
+  if (typeof window.loadProjectMeta === "function") {
+    window.loadProjectMeta();
+  }
+  init();
+});
 
 function init() {
   stage = document.getElementById("project-stage");
@@ -267,7 +273,7 @@ function resizeCanvas() {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   ctx.textBaseline = "middle";
-  ctx.textFont = '14px "Courier New", monospace';
+  ctx.font = '14px "Courier New", monospace';
 
   updateRadius();
 
