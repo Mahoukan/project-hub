@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mega Project Hub</title>
+
+  <!-- Font -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- CSS -->
+  <link rel="stylesheet" href="css/main.css?v=2" />
+
+  <!-- Favicon -->
+  <link rel="icon" href="favicon.ico">
+</head>
+
+<body>
+  <div class="app">
+
+    <header class="site-header">
+      <div class="header-inner">
+        <h1>Mega Project Hub</h1>
+        <p class="header-tag">Creative Coding · Games · Experiments</p>
+        <p>Experiments, games, prototypes, and ongoing projects.</p>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section class="projects-section">
+
+        <div class="section-head">
+          <h2>Projects</h2>
+          <p id="project-count" class="loading">Loading projects…</p>
+        </div>
+
+        <div class="projects-controls">
+          <div id="tag-filters" class="tag-filters"></div>
+        </div>
+
+        <div id="projects-grid" class="projects-grid"></div>
+
+      </section>
+    </main>
+
+  </div>
+
+  <template id="project-card-template">
+    <a class="project-card" href="#" data-tags="">
+      <div class="project-thumb-wrap">
+        <img class="project-thumb" src="" alt="" />
+      </div>
+
+      <div class="project-body">
+        <h3 class="project-title"></h3>
+        <p class="project-desc"></p>
+        <div class="project-tags"></div>
+      </div>
+    </a>
+  </template>
+
+  <script src="js/main.js"></script>
+</body>
+</html>

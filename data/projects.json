@@ -1,0 +1,46 @@
+[
+  {
+    "slug": "snow-particles",
+    "title": "Snow Particles",
+    "description": "A simple interactive snowfall you can play around with.",
+    "longDescription": "This is a relaxing snowfall scene where snowflakes drift down the screen at different speeds and sizes. You can interact with it by clicking or dragging to push the snow around and create little bursts. It is designed to feel smooth and responsive on any screen size.",
+    "path": "./projects/snow-particles/index.html",
+    "thumbnail": "images/thumbnails/snow.png",
+    "tags": ["visual", "interactive"],
+    "featured": true,
+    "status": "prototype",
+    "order": 1,
+    "controls": [
+      "Click anywhere to create a burst in the snow",
+      "Click and drag to push the snow around",
+      "Resize the window and it will adjust automatically"
+    ],
+    "notes": [
+      "Different snowflakes fall at different speeds to make it feel more natural",
+      "Designed to stay smooth even with lots of particles on screen"
+    ]
+  },
+
+  {
+    "slug": "rose-curves-advanced",
+    "title": "Rose Curves",
+    "description": "Explore and play with different mathematical patterns.",
+    "longDescription": "This project lets you explore rose curves, which are patterns created using maths. You can switch between different shapes, adjust how they are drawn, and watch them animate smoothly. It is part visual tool and part experiment.",
+    "path": "./projects/rose-curves-advanced/index.html",
+    "thumbnail": "images/thumbnails/rose.png",
+    "tags": ["maths", "visual", "interactive"],
+    "featured": true,
+    "status": "experimental",
+    "order": 3,
+    "controls": [
+      "Use the arrows or buttons to switch between curves",
+      "Press H to hide the interface",
+      "Press S to open settings",
+      "Use the sliders to change how the curve behaves"
+    ],
+    "notes": [
+      "Each curve is drawn smoothly to keep the animation clean",
+      "You can tweak the settings to create your own variations"
+    ]
+  }
+]
