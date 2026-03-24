@@ -332,9 +332,9 @@
     const titleWidth = overlayTitle ? overlayTitle.getBoundingClientRect().width : 110;
 
     const w = 88;
-    const h = 38;
-    const x = 14 + titleWidth + 14;
-    const y = 14;
+    const h = 32;
+    const x = 10;
+    const y = 10;
 
     ctx.save();
     ctx.fillStyle = "rgba(0,0,0,0.45)";
