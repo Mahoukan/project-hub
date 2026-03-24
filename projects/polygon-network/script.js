@@ -1,3 +1,5 @@
+const TWO_PI = Math.PI * 2;
+
 let n = 3;
 let radius = 0;
 let angleOffset = 0;
@@ -7,6 +9,7 @@ let isPaused = false;
 let showTrail = false;
 let fillPolygon = false;
 let uiInteracted = false;
+let panelVisible = true;
 
 const MIN_POINTS = 1;
 const MAX_POINTS = 150;
@@ -20,22 +23,40 @@ let hueSpeed = 1;
 let hueSpread = 1;
 let trailFade = 18;
 let radiusScale = 0.375;
-let panelVisible = true;
 
+let frameCount = 0;
 let ui;
 
-function setup() {
-  const { stageWidth, stageHeight } = getStageSize();
+const pointer = {
+  x: 0,
+  y: 0,
+  down: false,
+  startedInsideCanvas: false
+};
 
-  const canvas = createCanvas(stageWidth, stageHeight);
-  canvas.parent("project-stage");
+let canvas;
+let ctx;
+let stage;
+let width = 0;
+let height = 0;
+let dpr = Math.max(1, window.devicePixelRatio || 1);
 
-  colorMode(HSB, 255);
-  textFont("Courier New", 14);
-  updateRadius();
+document.addEventListener("DOMContentLoaded", init);
+
+function init() {
+  stage = document.getElementById("project-stage");
+  canvas = document.getElementById("polygon-canvas");
+  ctx = canvas.getContext("2d");
+
+  resizeCanvas();
+
+  ctx.font = '14px "Courier New", monospace';
 
   ui = new ControlPanel(16, 16, getPanelWidth(), getPanelHeight());
   buildUI();
+
+  attachEvents();
+  requestAnimationFrame(loop);
 }
 
 function buildUI() {
@@ -46,7 +67,7 @@ function buildUI() {
   });
 
   ui.addSlider("Points", MIN_POINTS, MAX_POINTS, n, 1, (v) => {
-    n = floor(v);
+    n = Math.floor(v);
   });
 
   ui.addSlider("Radius", 0.15, 0.48, radiusScale, 0.005, (v) => {
@@ -55,7 +76,7 @@ function buildUI() {
   });
 
   ui.addSlider("Line Alpha", 0, 255, lineAlpha, 1, (v) => {
-    lineAlpha = floor(v);
+    lineAlpha = Math.floor(v);
   });
 
   ui.addSlider("Line Width", 0.5, 4, lineThickness, 0.1, (v) => {
@@ -63,15 +84,15 @@ function buildUI() {
   });
 
   ui.addSlider("Point Size", 2, 18, pointSize, 1, (v) => {
-    pointSize = floor(v);
+    pointSize = Math.floor(v);
   });
 
   ui.addSlider("Point Alpha", 0, 255, pointAlpha, 1, (v) => {
-    pointAlpha = floor(v);
+    pointAlpha = Math.floor(v);
   });
 
   ui.addSlider("Fill Alpha", 0, 255, fillAlpha, 1, (v) => {
-    fillAlpha = floor(v);
+    fillAlpha = Math.floor(v);
   });
 
   ui.addSlider("Hue Speed", 0, 8, hueSpeed, 0.05, (v) => {
@@ -83,7 +104,7 @@ function buildUI() {
   });
 
   ui.addSlider("Trail Fade", 0, 80, trailFade, 1, (v) => {
-    trailFade = floor(v);
+    trailFade = Math.floor(v);
   });
 
   ui.addToggle("Paused", isPaused, (v) => {
@@ -126,136 +147,212 @@ function buildUI() {
   });
 
   ui.addButton("Save PNG", () => {
-    saveCanvas("polygon_network", "png");
+    saveCanvasImage();
   });
+}
+
+function attachEvents() {
+  window.addEventListener("resize", resizeCanvas);
+
+  canvas.addEventListener("pointerdown", onPointerDown);
+  window.addEventListener("pointermove", onPointerMove);
+  window.addEventListener("pointerup", onPointerUp);
+  canvas.addEventListener("wheel", onWheel, { passive: false });
+
+  window.addEventListener("keydown", onKeyDown);
+}
+
+function loop() {
+  frameCount += 1;
+  draw();
+  requestAnimationFrame(loop);
 }
 
 function draw() {
   drawBackground();
 
-  push();
-  translate(width * 0.5, height * 0.5);
+  const cx = width * 0.5;
+  const cy = height * 0.5;
 
   if (fillPolygon && n >= 3) {
-    noStroke();
-    fill((frameCount * 2) % 255, 180, 255, fillAlpha);
-    beginShape();
+    const fillRgb = hsbToRgb((frameCount * 2) % 255, 180, 255);
+    ctx.fillStyle = rgba(fillRgb.r, fillRgb.g, fillRgb.b, fillAlpha / 255);
+
+    ctx.beginPath();
     for (let i = 0; i < n; i++) {
       const a = angleOffset + (TWO_PI * i) / n;
-      vertex(radius * cos(a), radius * sin(a));
+      const x = cx + radius * Math.cos(a);
+      const y = cy + radius * Math.sin(a);
+
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
-    endShape(CLOSE);
+    ctx.closePath();
+    ctx.fill();
   }
 
-  strokeWeight(lineThickness);
+  ctx.lineWidth = lineThickness;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
   for (let i = 0; i < n; i++) {
     const a1 = angleOffset + (TWO_PI * i) / n;
-    const x1 = radius * cos(a1);
-    const y1 = radius * sin(a1);
+    const x1 = cx + radius * Math.cos(a1);
+    const y1 = cy + radius * Math.sin(a1);
 
     for (let j = i + 1; j < n; j++) {
       const a2 = angleOffset + (TWO_PI * j) / n;
-      const x2 = radius * cos(a2);
-      const y2 = radius * sin(a2);
+      const x2 = cx + radius * Math.cos(a2);
+      const y2 = cy + radius * Math.sin(a2);
 
-      const hue = map((i + j) * hueSpread, 0, max(1, n * 2), 0, 255);
-      stroke((frameCount * hueSpeed + hue) % 255, 200, 255, lineAlpha);
-      line(x1, y1, x2, y2);
+      const hue = mapValue((i + j) * hueSpread, 0, Math.max(1, n * 2), 0, 255);
+      const rgb = hsbToRgb((frameCount * hueSpeed + hue) % 255, 200, 255);
+
+      ctx.strokeStyle = rgba(rgb.r, rgb.g, rgb.b, lineAlpha / 255);
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
     }
   }
 
-  noStroke();
-  fill(255, pointAlpha);
+  ctx.fillStyle = rgba(255, 255, 255, pointAlpha / 255);
   for (let i = 0; i < n; i++) {
     const a = angleOffset + (TWO_PI * i) / n;
-    circle(radius * cos(a), radius * sin(a), pointSize);
-  }
+    const x = cx + radius * Math.cos(a);
+    const y = cy + radius * Math.sin(a);
 
-  pop();
+    ctx.beginPath();
+    ctx.arc(x, y, pointSize * 0.5, 0, TWO_PI);
+    ctx.fill();
+  }
 
   if (!isPaused) {
     angleOffset += rotationSpeed;
   }
 
   if (panelVisible) {
-    ui.draw();
+    ui.draw(ctx);
   }
 }
 
 function drawBackground() {
   if (!showTrail) {
-    background(0);
+    ctx.clearRect(0, 0, width, height);
+    ctx.fillStyle = "#000";
+    ctx.fillRect(0, 0, width, height);
   } else {
-    noStroke();
-    fill(0, 0, 0, trailFade);
-    rect(0, 0, width, height);
+    ctx.fillStyle = `rgba(0, 0, 0, ${trailFade / 255})`;
+    ctx.fillRect(0, 0, width, height);
   }
 }
 
 function updateRadius() {
-  radius = min(width, height) * radiusScale;
+  radius = Math.min(width, height) * radiusScale;
 }
 
-function mousePressed() {
-  uiInteracted = panelVisible ? ui.pointerPressed(mouseX, mouseY) : false;
+function resizeCanvas() {
+  const { stageWidth, stageHeight } = getStageSize();
+
+  stage.style.height = `${stageHeight}px`;
+
+  width = stageWidth;
+  height = stageHeight;
+  dpr = Math.max(1, window.devicePixelRatio || 1);
+
+  canvas.width = Math.round(width * dpr);
+  canvas.height = Math.round(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.textBaseline = "middle";
+  ctx.textFont = '14px "Courier New", monospace';
+
+  updateRadius();
+
+  if (ui) {
+    ui.w = getPanelWidth();
+    ui.maxH = getPanelHeight();
+    ui.touchMode = isTouchLikeLayout();
+    ui.updateMetrics();
+    ui.clampToScreen();
+  }
 }
 
-function mouseDragged() {
-  if (panelVisible && ui.pointerDragged(mouseX, mouseY)) return false;
+function getStageSize() {
+  const stageWidth = Math.max(280, stage?.clientWidth || 600);
+  const stageHeight = Math.max(320, Math.min(window.innerHeight - 180, 720));
+  return { stageWidth, stageHeight };
 }
 
-function mouseReleased() {
+function getPanelWidth() {
+  if (width < 520) return Math.min(width - 20, 300);
+  return Math.min(340, width * 0.42);
+}
+
+function getPanelHeight() {
+  return Math.min(height - 20, height * 0.82);
+}
+
+function isTouchLikeLayout() {
+  return width < 700 || "ontouchstart" in window;
+}
+
+function onPointerDown(event) {
+  updatePointer(event);
+  pointer.down = true;
+  pointer.startedInsideCanvas = insideCanvas(pointer.x, pointer.y);
+
+  uiInteracted = panelVisible ? ui.pointerPressed(pointer.x, pointer.y) : false;
+  if (uiInteracted) event.preventDefault();
+}
+
+function onPointerMove(event) {
+  updatePointer(event);
+
+  if (!pointer.down) return;
+
+  if (panelVisible && ui.pointerDragged(pointer.x, pointer.y)) {
+    event.preventDefault();
+  }
+}
+
+function onPointerUp(event) {
+  updatePointer(event);
+
   if (panelVisible) ui.pointerReleased();
 
   if (uiInteracted) {
     uiInteracted = false;
-    return false;
+    pointer.down = false;
+    return;
   }
 
-  if (
-    mouseX >= 0 &&
-    mouseX <= width &&
-    mouseY >= 0 &&
-    mouseY <= height
-  ) {
+  if (pointer.startedInsideCanvas && insideCanvas(pointer.x, pointer.y)) {
     n = constrain(n + 1, MIN_POINTS, MAX_POINTS);
     ui.setSliderValue("Points", n);
   }
 
-  return false;
+  pointer.down = false;
 }
 
-function mouseWheel(event) {
-  if (panelVisible && ui.wheel(event.delta, mouseX, mouseY)) {
-    return false;
+function onWheel(event) {
+  updatePointer(event);
+
+  if (panelVisible && ui.wheel(event.deltaY, pointer.x, pointer.y)) {
+    event.preventDefault();
   }
 }
 
-function touchStarted() {
-  if (touches.length > 0) {
-    const t = touches[0];
-    uiInteracted = panelVisible ? ui.pointerPressed(t.x, t.y) : false;
-    if (uiInteracted) return false;
-  }
-}
+function onKeyDown(event) {
+  const key = event.key;
 
-function touchMoved() {
-  if (touches.length > 0) {
-    const t = touches[0];
-    if (panelVisible && ui.pointerDragged(t.x, t.y)) return false;
-  }
-}
-
-function touchEnded() {
-  if (panelVisible) ui.pointerReleased();
-}
-
-function keyPressed() {
   if (key === " ") {
+    event.preventDefault();
     isPaused = !isPaused;
     ui.setToggleValue("Paused", isPaused);
-    return false;
+    return;
   }
 
   if (key === "t" || key === "T") {
@@ -267,58 +364,43 @@ function keyPressed() {
   } else if (key === "r" || key === "R") {
     angleOffset = 0;
   } else if (key === "s" || key === "S") {
-    saveCanvas("polygon_network", "png");
+    saveCanvasImage();
   } else if (key === "h" || key === "H") {
     panelVisible = !panelVisible;
-  } else if (keyCode === UP_ARROW) {
+  } else if (key === "ArrowUp") {
+    event.preventDefault();
     n = constrain(n + 1, MIN_POINTS, MAX_POINTS);
     ui.setSliderValue("Points", n);
-    return false;
-  } else if (keyCode === DOWN_ARROW) {
+  } else if (key === "ArrowDown") {
+    event.preventDefault();
     n = constrain(n - 1, MIN_POINTS, MAX_POINTS);
     ui.setSliderValue("Points", n);
-    return false;
-  } else if (keyCode === LEFT_ARROW) {
+  } else if (key === "ArrowLeft") {
+    event.preventDefault();
     n = MIN_POINTS;
     ui.setSliderValue("Points", n);
-    return false;
-  } else if (keyCode === RIGHT_ARROW) {
+  } else if (key === "ArrowRight") {
+    event.preventDefault();
     n = constrain(n + 10, MIN_POINTS, MAX_POINTS);
     ui.setSliderValue("Points", n);
-    return false;
   }
 }
 
-function windowResized() {
-  const { stageWidth, stageHeight } = getStageSize();
-  resizeCanvas(stageWidth, stageHeight);
-  updateRadius();
-
-  ui.w = getPanelWidth();
-  ui.maxH = getPanelHeight();
-  ui.touchMode = isTouchLikeLayout();
-  ui.updateMetrics();
-  ui.clampToScreen();
+function updatePointer(event) {
+  const rect = canvas.getBoundingClientRect();
+  pointer.x = event.clientX - rect.left;
+  pointer.y = event.clientY - rect.top;
 }
 
-function getStageSize() {
-  const stage = document.getElementById("project-stage");
-  const stageWidth = max(280, stage?.clientWidth || 600);
-  const stageHeight = max(320, min(window.innerHeight - 180, 720));
-  return { stageWidth, stageHeight };
+function insideCanvas(x, y) {
+  return x >= 0 && x <= width && y >= 0 && y <= height;
 }
 
-function getPanelWidth() {
-  if (width < 520) return min(width - 20, 300);
-  return min(340, width * 0.42);
-}
-
-function getPanelHeight() {
-  return min(height - 20, height * 0.82);
-}
-
-function isTouchLikeLayout() {
-  return width < 700 || "ontouchstart" in window;
+function saveCanvasImage() {
+  const link = document.createElement("a");
+  link.download = "polygon_network.png";
+  link.href = canvas.toDataURL("image/png");
+  link.click();
 }
 
 class ControlPanel {
@@ -399,17 +481,17 @@ class ControlPanel {
   }
 
   getVisibleContentHeight() {
-    const fullH = min(this.maxH, this.headerH + this.getContentHeight());
-    return max(0, fullH - this.headerH);
+    const fullH = Math.min(this.maxH, this.headerH + this.getContentHeight());
+    return Math.max(0, fullH - this.headerH);
   }
 
   getFullHeight() {
     if (this.hidden) return this.hiddenButtonH;
-    return min(this.maxH, this.headerH + this.getContentHeight());
+    return Math.min(this.maxH, this.headerH + this.getContentHeight());
   }
 
   getMaxScroll() {
-    return max(0, this.getContentHeight() - this.getVisibleContentHeight());
+    return Math.max(0, this.getContentHeight() - this.getVisibleContentHeight());
   }
 
   clampScroll() {
@@ -426,9 +508,20 @@ class ControlPanel {
 
   contains(mx, my) {
     if (this.hidden) {
-      return mx >= this.x && mx <= this.x + this.hiddenButtonW && my >= this.y && my <= this.y + this.hiddenButtonH;
+      return (
+        mx >= this.x &&
+        mx <= this.x + this.hiddenButtonW &&
+        my >= this.y &&
+        my <= this.y + this.hiddenButtonH
+      );
     }
-    return mx >= this.x && mx <= this.x + this.w && my >= this.y && my <= this.y + this.getFullHeight();
+
+    return (
+      mx >= this.x &&
+      mx <= this.x + this.w &&
+      my >= this.y &&
+      my <= this.y + this.getFullHeight()
+    );
   }
 
   contentContains(mx, my) {
@@ -438,144 +531,141 @@ class ControlPanel {
     return mx >= this.x && mx <= this.x + this.w && my >= top && my <= top + h;
   }
 
-  draw() {
+  draw(ctx) {
     if (this.hidden) {
-      this.drawHiddenButton();
+      this.drawHiddenButton(ctx);
       return;
     }
 
     this.clampScroll();
+
     const fullH = this.getFullHeight();
     const contentY = this.y + this.headerH;
     const contentH = this.getVisibleContentHeight();
 
-    push();
-    noStroke();
-    fill(18, 18, 28, 225);
-    rect(this.x, this.y, this.w, fullH, 14);
+    roundRectFill(ctx, this.x, this.y, this.w, fullH, 14, "rgba(18,18,28,0.88)");
+    roundRectFill(ctx, this.x, this.y, this.w, this.headerH, 14, "rgba(38,38,60,0.96)", {
+      bottomLeft: 0,
+      bottomRight: 0
+    });
 
-    fill(38, 38, 60, 245);
-    rect(this.x, this.y, this.w, this.headerH, 14, 14, 0, 0);
+    drawText(ctx, "Controls", this.x + 12, this.y + this.headerH * 0.5, {
+      size: this.touchMode ? 15 : 14,
+      color: "#fff",
+      align: "left"
+    });
 
-    fill(255);
-    textAlign(LEFT, CENTER);
-    textSize(this.touchMode ? 15 : 14);
-    text("Controls", this.x + 12, this.y + this.headerH * 0.5);
+    this.drawHideButton(ctx);
 
-    this.drawHideButton();
-
-    drawingContext.save();
-    drawingContext.beginPath();
-    drawingContext.rect(this.x, contentY, this.w, contentH);
-    drawingContext.clip();
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(this.x, contentY, this.w, contentH);
+    ctx.clip();
 
     let y = contentY + this.padding - this.scrollOffset;
 
     for (const item of this.items) {
       if (item.type === "slider") {
-        this.drawSlider(item, y);
+        this.drawSlider(ctx, item, y);
       } else if (item.type === "toggle") {
-        this.drawToggle(item, y);
+        this.drawToggle(ctx, item, y);
       } else if (item.type === "button") {
-        this.drawButton(item, y);
+        this.drawButton(ctx, item, y);
       }
       y += this.rowH;
     }
 
-    drawingContext.restore();
+    ctx.restore();
 
     if (this.getMaxScroll() > 0) {
-      this.drawScrollbar();
+      this.drawScrollbar(ctx);
     }
-
-    pop();
   }
 
-  drawHideButton() {
+  drawHideButton(ctx) {
     const bx = this.x + this.w - 30;
     const by = this.y + 5;
     const bw = 22;
     const bh = this.touchMode ? 24 : 20;
 
-    fill(70, 90, 120);
-    rect(bx, by, bw, bh, 6);
-
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(16);
-    text("−", bx + bw * 0.5, by + bh * 0.5 + 1);
+    roundRectFill(ctx, bx, by, bw, bh, 6, "rgb(70,90,120)");
+    drawText(ctx, "−", bx + bw * 0.5, by + bh * 0.5 + 1, {
+      size: 16,
+      color: "#fff",
+      align: "center"
+    });
   }
 
-  drawHiddenButton() {
-    push();
-    noStroke();
-    fill(40, 40, 60, 240);
-    rect(this.x, this.y, this.hiddenButtonW, this.hiddenButtonH, 10);
-
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(this.touchMode ? 20 : 18);
-    text("+", this.x + this.hiddenButtonW * 0.5, this.y + this.hiddenButtonH * 0.5 + 1);
-    pop();
+  drawHiddenButton(ctx) {
+    roundRectFill(ctx, this.x, this.y, this.hiddenButtonW, this.hiddenButtonH, 10, "rgba(40,40,60,0.94)");
+    drawText(ctx, "+", this.x + this.hiddenButtonW * 0.5, this.y + this.hiddenButtonH * 0.5 + 1, {
+      size: this.touchMode ? 20 : 18,
+      color: "#fff",
+      align: "center"
+    });
   }
 
-  drawScrollbar() {
-    const fullH = this.getFullHeight();
+  drawScrollbar(ctx) {
     const contentY = this.y + this.headerH;
     const contentH = this.getVisibleContentHeight();
     const trackX = this.x + this.w - this.scrollBarW - 4;
     const trackY = contentY + 4;
     const trackH = contentH - 8;
 
-    fill(80, 60);
-    rect(trackX, trackY, this.scrollBarW, trackH, 8);
+    roundRectFill(ctx, trackX, trackY, this.scrollBarW, trackH, 8, "rgba(120,120,120,0.28)");
 
     const total = this.getContentHeight();
     const visible = this.getVisibleContentHeight();
-    const thumbH = max(26, trackH * (visible / total));
+    const thumbH = Math.max(26, trackH * (visible / total));
     const maxThumbY = trackH - thumbH;
-    const thumbY = trackY + map(this.scrollOffset, 0, max(1, this.getMaxScroll()), 0, maxThumbY);
+    const thumbY = trackY + mapValue(this.scrollOffset, 0, Math.max(1, this.getMaxScroll()), 0, maxThumbY);
 
-    fill(180, 200, 255, 220);
-    rect(trackX, thumbY, this.scrollBarW, thumbH, 8);
+    roundRectFill(ctx, trackX, thumbY, this.scrollBarW, thumbH, 8, "rgba(180,200,255,0.86)");
   }
 
-  drawSlider(item, y) {
+  drawSlider(ctx, item, y) {
     if (y + this.rowH < this.y + this.headerH || y > this.y + this.getFullHeight()) return;
 
     const labelX = this.x + this.padding;
-    const sliderX = this.x + max(100, this.w * 0.4);
+    const sliderX = this.x + Math.max(100, this.w * 0.4);
     const rightPad = this.scrollBarW + 14;
     const sliderW = this.w - (sliderX - this.x) - rightPad - this.padding;
     const sliderY = y + this.rowH * 0.58;
 
-    fill(235);
-    noStroke();
-    textAlign(LEFT, CENTER);
-    textSize(this.textSize);
-    text(item.label, labelX, y + this.rowH * 0.45);
+    drawText(ctx, item.label, labelX, y + this.rowH * 0.45, {
+      size: this.textSize,
+      color: "rgb(235,235,235)",
+      align: "left"
+    });
 
-    stroke(120);
-    strokeWeight(2);
-    line(sliderX, sliderY, sliderX + sliderW, sliderY);
+    ctx.strokeStyle = "rgb(120,120,120)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(sliderX, sliderY);
+    ctx.lineTo(sliderX + sliderW, sliderY);
+    ctx.stroke();
 
     const t = (item.value - item.min) / (item.max - item.min);
     const knobX = lerp(sliderX, sliderX + sliderW, t);
 
-    noStroke();
-    fill(180, 200, 255);
-    circle(knobX, sliderY, this.sliderKnobSize);
+    ctx.fillStyle = "rgb(180,200,255)";
+    ctx.beginPath();
+    ctx.arc(knobX, sliderY, this.sliderKnobSize * 0.5, 0, TWO_PI);
+    ctx.fill();
 
-    fill(255);
-    textAlign(RIGHT, CENTER);
-    text(
-      item.step < 1 ? Number(item.value).toFixed(3).replace(/\.?0+$/, "") : floor(item.value),
-      this.x + this.w - rightPad,
-      y + this.rowH * 0.45
-    );
+    const valueText =
+      item.step < 1
+        ? Number(item.value).toFixed(3).replace(/\.?0+$/, "")
+        : `${Math.floor(item.value)}`;
+
+    drawText(ctx, valueText, this.x + this.w - rightPad, y + this.rowH * 0.45, {
+      size: this.textSize,
+      color: "#fff",
+      align: "right"
+    });
   }
 
-  drawToggle(item, y) {
+  drawToggle(ctx, item, y) {
     if (y + this.rowH < this.y + this.headerH || y > this.y + this.getFullHeight()) return;
 
     const labelX = this.x + this.padding;
@@ -583,24 +673,26 @@ class ControlPanel {
     const boxX = this.x + this.w - this.scrollBarW - this.padding - boxS - 6;
     const boxY = y + (this.rowH - boxS) * 0.5;
 
-    fill(235);
-    noStroke();
-    textAlign(LEFT, CENTER);
-    textSize(this.textSize);
-    text(item.label, labelX, y + this.rowH * 0.5);
+    drawText(ctx, item.label, labelX, y + this.rowH * 0.5, {
+      size: this.textSize,
+      color: "rgb(235,235,235)",
+      align: "left"
+    });
 
-    fill(item.value ? color(120, 200, 255) : color(70));
-    rect(boxX, boxY, boxS, boxS, 5);
+    roundRectFill(ctx, boxX, boxY, boxS, boxS, 5, item.value ? "rgb(120,200,255)" : "rgb(70,70,70)");
 
     if (item.value) {
-      stroke(255);
-      strokeWeight(2);
-      line(boxX + 4, boxY + boxS * 0.55, boxX + boxS * 0.42, boxY + boxS - 4);
-      line(boxX + boxS * 0.42, boxY + boxS - 4, boxX + boxS - 4, boxY + 4);
+      ctx.strokeStyle = "#fff";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(boxX + 4, boxY + boxS * 0.55);
+      ctx.lineTo(boxX + boxS * 0.42, boxY + boxS - 4);
+      ctx.lineTo(boxX + boxS - 4, boxY + 4);
+      ctx.stroke();
     }
   }
 
-  drawButton(item, y) {
+  drawButton(ctx, item, y) {
     if (y + this.rowH < this.y + this.headerH || y > this.y + this.getFullHeight()) return;
 
     const bx = this.x + this.padding;
@@ -608,14 +700,13 @@ class ControlPanel {
     const bw = this.w - this.padding * 2 - this.scrollBarW - 8;
     const bh = this.rowH - 8;
 
-    fill(70, 90, 120);
-    noStroke();
-    rect(bx, by, bw, bh, 8);
+    roundRectFill(ctx, bx, by, bw, bh, 8, "rgb(70,90,120)");
 
-    fill(255);
-    textAlign(CENTER, CENTER);
-    textSize(this.textSize);
-    text(item.label, bx + bw * 0.5, by + bh * 0.5);
+    drawText(ctx, item.label, bx + bw * 0.5, by + bh * 0.5, {
+      size: this.textSize,
+      color: "#fff",
+      align: "center"
+    });
   }
 
   pointerPressed(mx, my) {
@@ -653,7 +744,7 @@ class ControlPanel {
 
     for (const item of this.items) {
       if (item.type === "slider") {
-        const sliderX = this.x + max(100, this.w * 0.4);
+        const sliderX = this.x + Math.max(100, this.w * 0.4);
         const rightPad = this.scrollBarW + 14;
         const sliderW = this.w - (sliderX - this.x) - rightPad - this.padding;
         const sliderY = y + this.rowH * 0.58;
@@ -753,6 +844,7 @@ class ControlPanel {
     const trackX = this.x + this.w - this.scrollBarW - 4;
     const trackY = contentY + 4;
     const trackH = contentH - 8;
+
     return mx >= trackX && mx <= trackX + this.scrollBarW && my >= trackY && my <= trackY + trackH;
   }
 
@@ -764,18 +856,21 @@ class ControlPanel {
 
     const total = this.getContentHeight();
     const visible = this.getVisibleContentHeight();
-    const thumbH = max(26, trackH * (visible / total));
+    const thumbH = Math.max(26, trackH * (visible / total));
     const maxThumbTravel = trackH - thumbH;
 
     const thumbCenterY = constrain(my, trackY + thumbH * 0.5, trackY + trackH - thumbH * 0.5);
-    const t = maxThumbTravel <= 0 ? 0 : (thumbCenterY - (trackY + thumbH * 0.5)) / maxThumbTravel;
+    const t =
+      maxThumbTravel <= 0
+        ? 0
+        : (thumbCenterY - (trackY + thumbH * 0.5)) / maxThumbTravel;
 
     this.scrollOffset = t * this.getMaxScroll();
     this.clampScroll();
   }
 
   updateSlider(item, mx) {
-    const sliderX = this.x + max(100, this.w * 0.4);
+    const sliderX = this.x + Math.max(100, this.w * 0.4);
     const rightPad = this.scrollBarW + 14;
     const sliderW = this.w - (sliderX - this.x) - rightPad - this.padding;
 
@@ -783,7 +878,7 @@ class ControlPanel {
     t = constrain(t, 0, 1);
 
     let value = lerp(item.min, item.max, t);
-    value = round(value / item.step) * item.step;
+    value = Math.round(value / item.step) * item.step;
 
     if (item.step < 1) {
       const decimals = String(item.step).split(".")[1]?.length || 3;
@@ -793,4 +888,90 @@ class ControlPanel {
     item.value = constrain(value, item.min, item.max);
     item.onChange?.(item.value);
   }
+}
+
+function roundRectFill(ctx, x, y, w, h, r, fillStyle, corners = {}) {
+  const tl = corners.topLeft ?? r;
+  const tr = corners.topRight ?? r;
+  const br = corners.bottomRight ?? r;
+  const bl = corners.bottomLeft ?? r;
+
+  ctx.beginPath();
+  ctx.moveTo(x + tl, y);
+  ctx.lineTo(x + w - tr, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + tr);
+  ctx.lineTo(x + w, y + h - br);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - br, y + h);
+  ctx.lineTo(x + bl, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - bl);
+  ctx.lineTo(x, y + tl);
+  ctx.quadraticCurveTo(x, y, x + tl, y);
+  ctx.closePath();
+
+  ctx.fillStyle = fillStyle;
+  ctx.fill();
+}
+
+function drawText(ctx, text, x, y, options = {}) {
+  const size = options.size ?? 14;
+  const color = options.color ?? "#fff";
+  const align = options.align ?? "left";
+
+  ctx.fillStyle = color;
+  ctx.font = `${size}px "Courier New", monospace`;
+  ctx.textAlign = align;
+  ctx.textBaseline = "middle";
+  ctx.fillText(text, x, y);
+}
+
+function lerp(a, b, t) {
+  return a + (b - a) * t;
+}
+
+function constrain(v, min, max) {
+  return Math.max(min, Math.min(max, v));
+}
+
+function mapValue(value, inMin, inMax, outMin, outMax) {
+  if (inMax === inMin) return outMin;
+  const t = (value - inMin) / (inMax - inMin);
+  return lerp(outMin, outMax, t);
+}
+
+function rgba(r, g, b, a) {
+  return `rgba(${r}, ${g}, ${b}, ${a})`;
+}
+
+function hsbToRgb(h, s, v) {
+  const hh = (h / 255) * 360;
+  const ss = s / 255;
+  const vv = v / 255;
+
+  const c = vv * ss;
+  const x = c * (1 - Math.abs(((hh / 60) % 2) - 1));
+  const m = vv - c;
+
+  let r1 = 0;
+  let g1 = 0;
+  let b1 = 0;
+
+  if (hh >= 0 && hh < 60) {
+    r1 = c; g1 = x; b1 = 0;
+  } else if (hh < 120) {
+    r1 = x; g1 = c; b1 = 0;
+  } else if (hh < 180) {
+    r1 = 0; g1 = c; b1 = x;
+  } else if (hh < 240) {
+    r1 = 0; g1 = x; b1 = c;
+  } else if (hh < 300) {
+    r1 = x; g1 = 0; b1 = c;
+  } else {
+    r1 = c; g1 = 0; b1 = x;
+  }
+
+  return {
+    r: Math.round((r1 + m) * 255),
+    g: Math.round((g1 + m) * 255),
+    b: Math.round((b1 + m) * 255)
+  };
 }
