@@ -360,7 +360,7 @@
 
     const w = 88;
     const h = 38;
-    const x = 14 + titleWidth + 14;
+    const x = 10;
     const y = 14;
 
     return (
