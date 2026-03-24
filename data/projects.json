@@ -55,7 +55,7 @@
     "description": "A rotating network of points with colourful connecting lines.",
     "longDescription": "This project draws a rotating set of points around a circle and connects every point to every other point, creating changing geometric patterns. You can adjust the number of points, change the rotation speed, toggle trails, and fill the polygon for different visual effects.",
     "path": "./projects/polygon-network/index.html",
-    "thumbnail": "images/thumbnails/polygon-network.png",
+    "thumbnail": "images/thumbnails/polygon_network.png",
     "tags": [
       "maths",
       "visual",

@@ -249,7 +249,6 @@ function touchMoved() {
 
 function touchEnded() {
   if (panelVisible) ui.pointerReleased();
-  return false;
 }
 
 function keyPressed() {
