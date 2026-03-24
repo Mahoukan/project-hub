@@ -578,11 +578,6 @@
 
       if (state.pause) {
         ctx.save();
-        ctx.fillStyle = "rgba(255,255,255,0.75)";
-        ctx.font = "16px Inter, Arial, sans-serif";
-        ctx.textAlign = "right";
-        ctx.textBaseline = "top";
-        ctx.fillText("Paused", app.width - 16, 38);
         ctx.restore();
       }
     }});
