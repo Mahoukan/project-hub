@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Loading...</title>
+  <link rel="stylesheet" href="../../css/project-layout.css" />
+  <link rel="stylesheet" href="./style.css" />
+</head>
+<body data-project-slug="harmonic-grid-curves">
+  <div class="project-shell">
+    <header class="project-header">
+      <a class="back-link" href="../../index.html">← Back to hub</a>
+
+      <div class="project-meta">
+        <h1 id="project-title">Loading...</h1>
+        <p id="project-description">Loading project description...</p>
+      </div>
+    </header>
+
+    <main class="project-main">
+      <section class="project-stage">
+        <canvas id="canvas"></canvas>
+
+        <div class="canvas-overlay">
+          <div class="overlay-pill" id="overlay-title">Loading...</div>
+        </div>
+
+        <button
+          id="settings-toggle"
+          class="settings-toggle"
+          type="button"
+          aria-expanded="true"
+          aria-controls="project-settings"
+        >
+          Settings
+        </button>
+
+        <aside id="project-settings" class="project-settings">
+          <div class="settings-header">
+            <h2>Settings</h2>
+            <button id="settings-close" class="settings-close" type="button" aria-label="Close settings">
+              ×
+            </button>
+          </div>
+
+          <div class="settings-scroll">
+            <label class="control-group">
+              <span class="control-label">Grid Size</span>
+              <input id="grid-slider" type="range" min="2" max="25" value="6" />
+              <span id="grid-value" class="control-value">6</span>
+              <p class="control-help">
+                Changes which Lissajous-style row and column combinations are cycled through.
+              </p>
+            </label>
+
+            <label class="control-group">
+              <span class="control-label">Draw Speed</span>
+              <input id="speed-slider" type="range" min="1" max="200" value="6" />
+              <span id="speed-value" class="control-value">6</span>
+              <p class="control-help">
+                Controls how quickly the active curve is traced.
+              </p>
+            </label>
+
+            <label class="control-group">
+              <span class="control-label">Pause After Draw</span>
+              <input id="pause-slider" type="range" min="0" max="120" value="45" />
+              <span id="pause-value" class="control-value">45</span>
+              <p class="control-help">
+                How long the finished curve stays on screen before fading.
+              </p>
+            </label>
+
+            <label class="control-group">
+              <span class="control-label">Fade Length</span>
+              <input id="fade-slider" type="range" min="0" max="120" value="35" />
+              <span id="fade-value" class="control-value">35</span>
+              <p class="control-help">
+                Controls how long the fade-out lasts before the next curve begins.
+              </p>
+            </label>
+
+            <label class="control-group">
+              <span class="control-label">Tip Length</span>
+              <input id="tip-slider" type="range" min="4" max="80" value="24" />
+              <span id="tip-value" class="control-value">24</span>
+              <p class="control-help">
+                Adjusts the glowing tail behind the moving tip.
+              </p>
+            </label>
+
+            <label class="control-group">
+              <span class="control-label">Guide Opacity</span>
+              <input id="guide-slider" type="range" min="0" max="25" value="8" />
+              <span id="guide-value" class="control-value">8</span>
+              <p class="control-help">
+                Changes how visible the faint guide circle and crosshair are.
+              </p>
+            </label>
+          </div>
+        </aside>
+      </section>
+
+      <aside class="project-sidebar">
+        <section class="sidebar-block">
+          <h2>About</h2>
+          <p id="project-long-description">Loading project details...</p>
+        </section>
+
+        <section class="sidebar-block">
+          <h2>Tags</h2>
+          <div id="project-tags" class="sidebar-tags"></div>
+        </section>
+
+        <section class="sidebar-block">
+          <h2>Controls</h2>
+          <ul id="project-controls"></ul>
+        </section>
+
+        <section class="sidebar-block">
+          <h2>Notes</h2>
+          <ul id="project-notes"></ul>
+        </section>
+
+        <section class="sidebar-block">
+          <h2>Status</h2>
+          <p id="project-status">Loading status...</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <script src="../../js/project-page.js"></script>
+  <script src="../../js/project-boot.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

@@ -79,5 +79,29 @@
       "Different point counts create very different geometric patterns",
       "Trail mode lets the motion build up into more complex visuals"
     ]
-  }
+  },
+  {
+  "slug": "harmonic-grid-curves",
+  "title": "Lissajous Curves",
+  "description": "Lissajous curves drawn one at a time with changing ratios.",
+  "longDescription": "Each curve comes from pairing two motion ratios and drawing the result progressively. After finishing, it pauses briefly, fades out, and moves to the next ratio. The curve stays centred and fills most of the screen, with a faint guide to help track the motion.",
+  "path": "./projects/harmonic-grid-curves/index.html",
+  "thumbnail": "images/thumbnails/harmonic_grid_curves.png",
+  "tags": [
+    "maths",
+    "visual",
+    "interactive"
+  ],
+  "featured": true,
+  "status": "experimental",
+  "order": 5,
+  "controls": [
+    "Use the settings menu to change the grid size (ratio set)",
+    "Adjust speed, pause time, fade, tip length, and guide opacity",
+    "Click Pause on the canvas to stop or resume"
+  ],
+  "notes": [
+    "Each curve is labelled by its ratio"
+  ]
+}
 ]
