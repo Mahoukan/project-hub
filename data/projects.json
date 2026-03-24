@@ -6,7 +6,10 @@
     "longDescription": "This is a relaxing snowfall scene where snowflakes drift down the screen at different speeds and sizes. You can interact with it by clicking or dragging to push the snow around and create little bursts. It is designed to feel smooth and responsive on any screen size.",
     "path": "./projects/snow-particles/index.html",
     "thumbnail": "images/thumbnails/snow.png",
-    "tags": ["visual", "interactive"],
+    "tags": [
+      "visual",
+      "interactive"
+    ],
     "featured": true,
     "status": "prototype",
     "order": 1,
@@ -20,7 +23,6 @@
       "Designed to stay smooth even with lots of particles on screen"
     ]
   },
-
   {
     "slug": "rose-curves-advanced",
     "title": "Rose Curves",
@@ -28,7 +30,11 @@
     "longDescription": "This project lets you explore rose curves, which are patterns created using maths. You can switch between different shapes, adjust how they are drawn, and watch them animate smoothly. It is part visual tool and part experiment.",
     "path": "./projects/rose-curves-advanced/index.html",
     "thumbnail": "images/thumbnails/rose.png",
-    "tags": ["maths", "visual", "interactive"],
+    "tags": [
+      "maths",
+      "visual",
+      "interactive"
+    ],
     "featured": true,
     "status": "experimental",
     "order": 3,
@@ -41,6 +47,36 @@
     "notes": [
       "Each curve is drawn smoothly to keep the animation clean",
       "You can tweak the settings to create your own variations"
+    ]
+  },
+  {
+    "slug": "polygon-network",
+    "title": "Polygon Network",
+    "description": "A rotating network of points with colourful connecting lines.",
+    "longDescription": "This project draws a rotating set of points around a circle and connects every point to every other point, creating changing geometric patterns. You can adjust the number of points, change the rotation speed, toggle trails, and fill the polygon for different visual effects.",
+    "path": "./projects/polygon-network/index.html",
+    "thumbnail": "images/thumbnails/polygon-network.png",
+    "tags": [
+      "maths",
+      "visual",
+      "interactive"
+    ],
+    "featured": true,
+    "status": "experimental",
+    "order": 4,
+    "controls": [
+      "Use the sliders to change speed and number of points",
+      "Click to add one point",
+      "Arrow keys adjust the point count",
+      "Space or R pauses and resumes the animation",
+      "T toggles trail mode",
+      "F toggles polygon fill",
+      "S saves an image",
+      "H hides or shows the help and sliders"
+    ],
+    "notes": [
+      "Different point counts create very different geometric patterns",
+      "Trail mode lets the motion build up into more complex visuals"
     ]
   }
 ]
