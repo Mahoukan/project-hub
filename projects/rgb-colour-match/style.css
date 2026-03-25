@@ -1,0 +1,141 @@
+.project-stage {
+  position: relative;
+  background: linear-gradient(180deg, #f4f5f7 0%, #e8ebef 100%);
+  overflow: hidden;
+}
+
+.project-stage--stacked {
+  display: flex;
+  flex-direction: column;
+}
+
+.canvas-wrap {
+  position: relative;
+  height: clamp(340px, 52vw, 560px);
+}
+
+#canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: transparent;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.overlay-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(20, 24, 30, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f3f3f7;
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
+}
+
+.game-controls {
+  border-top: 1px solid rgba(20, 24, 30, 0.08);
+  background: rgba(255, 255, 255, 0.78);
+  backdrop-filter: blur(8px);
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  padding: 18px;
+}
+
+.control-group {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.control-group--buttons {
+  align-self: end;
+}
+
+.control-group--buttons .action-btn + .action-btn {
+  margin-top: 8px;
+}
+
+.control-group--help {
+  grid-column: 1 / -1;
+}
+
+.control-label {
+  font-size: 0.95rem;
+  color: #11161c;
+  font-weight: 600;
+}
+
+.control-value {
+  font-size: 0.84rem;
+  color: rgba(17, 22, 28, 0.7);
+}
+
+.control-help {
+  margin: 0;
+  font-size: 0.82rem;
+  line-height: 1.5;
+  color: rgba(17, 22, 28, 0.68);
+}
+
+input[type="range"],
+select {
+  width: 100%;
+}
+
+select {
+  padding: 10px 12px;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 24, 30, 0.12);
+  background: #fff;
+  color: #11161c;
+  font: inherit;
+}
+
+.action-btn {
+  width: 100%;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(20, 24, 30, 0.12);
+  background: #11161c;
+  color: #f7f8fa;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.14);
+}
+
+.action-btn.secondary {
+  background: rgba(20, 24, 30, 0.06);
+  color: #11161c;
+}
+
+@media (max-width: 900px) {
+  .canvas-wrap {
+    height: clamp(300px, 62vw, 460px);
+  }
+
+  .controls-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+}

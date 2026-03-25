@@ -37,7 +37,7 @@
     ],
     "featured": true,
     "status": "experimental",
-    "order": 3,
+    "order": 2,
     "controls": [
       "Use the arrows or buttons to switch between curves",
       "Press H to hide the interface",
@@ -63,7 +63,7 @@
     ],
     "featured": true,
     "status": "experimental",
-    "order": 4,
+    "order": 3,
     "controls": [
       "Use the sliders to change speed and number of points",
       "Click to add one point",
@@ -94,7 +94,7 @@
   ],
   "featured": true,
   "status": "experimental",
-  "order": 5,
+  "order": 4,
   "controls": [
     "Use the settings menu to change the grid size (ratio set)",
     "Adjust speed, pause time, fade, tip length, and guide opacity",
@@ -102,6 +102,34 @@
   ],
   "notes": [
     "Each curve is labelled by its ratio"
+  ]
+},
+{
+  "slug": "rgb-colour-match",
+  "title": "RGB Colour Match",
+  "description": "Try to match the target colour before the timer runs out.",
+  "longDescription": "Use the red, green, and blue sliders to match the target colour as closely as you can. When the round ends, your score is based on how close your colour was. You can change the difficulty, submit early, and try to beat your high score.",
+  "path": "./projects/rgb-colour-match/index.html",
+  "thumbnail": "images/thumbnails/rgb_colour_match.png",
+  "tags": [
+    "interactive",
+    "game",
+    "colour"
+  ],
+  "featured": true,
+  "status": "prototype",
+  "order": 5,
+  "controls": [
+    "Use the RGB sliders to match the target colour",
+    "Click Done to submit before time runs out",
+    "Click Reset to start a new round",
+    "Change the difficulty to adjust the timer",
+    "Press H to show or hide the help text"
+  ],
+  "notes": [
+    "Score is based on how close your RGB values are to the target",
+    "High score is tracked during play",
+    "The target RGB values are only shown after the round ends"
   ]
 }
 ]
