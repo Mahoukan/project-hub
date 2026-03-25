@@ -69,7 +69,7 @@
 
     function drawTimer(ctx, width, height) {
         const panelSize = Math.min(width * 0.32, height * 0.42);
-        const panelY = height * 0.16;
+        const panelY = height * 0.6;
         const cy = panelY + panelSize * 0.45;
         const cx = width * 0.5;
         const radius = Math.max(28, Math.min(width, height) * 0.055);
@@ -114,6 +114,7 @@
 
         const panelSize = Math.min(width * 0.34, height * 0.46);
         const panelY = height * 0.10;
+        //
         const gap = width * 0.12;
 
         const totalWidth = panelSize * 2 + gap;
