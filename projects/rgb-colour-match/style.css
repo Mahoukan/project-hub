@@ -59,7 +59,16 @@
 }
 
 .control-group--buttons {
-  align-self: end;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+}
+
+/* fallback: stack when too narrow */
+@media (max-width: 400px) {
+  .control-group--buttons {
+    grid-template-columns: 1fr;
+  }
 }
 
 .control-group--buttons .action-btn + .action-btn {

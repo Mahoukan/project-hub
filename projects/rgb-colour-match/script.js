@@ -47,13 +47,18 @@
     }
 
     function checkScore() {
-        const r = Math.abs(state.current.r - state.target.r);
-        const g = Math.abs(state.current.g - state.target.g);
-        const b = Math.abs(state.current.b - state.target.b);
+        const dr = state.current.r - state.target.r;
+        const dg = state.current.g - state.target.g;
+        const db = state.current.b - state.target.b;
 
-        const total = r + g + b;
-        let score = 100 - (total / 765) * 100;
-        score = Math.max(0, Math.round(score));
+        const dist = Math.sqrt(dr * dr + dg * dg + db * db);
+        const maxDist = Math.sqrt(255 * 255 * 3);
+
+        let t = 1 - dist / maxDist;
+        t = Math.max(0, t);
+
+        let score = Math.pow(t, 2) * 100;
+        score = Math.round(score);
 
         state.lastScore = score;
         state.highScore = Math.max(state.highScore, score);
