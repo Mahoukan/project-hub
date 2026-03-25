@@ -172,3 +172,43 @@ select {
   border-radius: 999px;
   background: rgba(0,0,0,0.06);
 }
+
+/* base slider reset */
+input[type="range"] {
+  appearance: none;
+  height: 6px;
+  border-radius: 999px;
+  background: #ccc;
+  outline: none;
+}
+
+/* thumb */
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #111;
+  cursor: pointer;
+}
+
+input[type="range"]::-moz-range-thumb {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #111;
+  cursor: pointer;
+}
+
+/* channel colours */
+#slider-r {
+  background: linear-gradient(to right, #000, red);
+}
+
+#slider-g {
+  background: linear-gradient(to right, #000, limegreen);
+}
+
+#slider-b {
+  background: linear-gradient(to right, #000, dodgerblue);
+}
