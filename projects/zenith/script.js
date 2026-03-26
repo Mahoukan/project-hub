@@ -1,6 +1,7 @@
 // ─── GLOBAL STATE ────────────────────────────────────────────────────────────
 let menu1Pos, menu2Pos, menuSize, text1Pos, text2Pos, barSize;
 let touchJustReleased = false;
+let muteButtonBounds = null;
 
 let helpScroll = 0;
 let helpMaxScroll = 0;
@@ -55,6 +56,15 @@ let empActive = false;
 let sniperStartTime = 0;
 let empStartTime = 0;
 
+// ─── BACKGROUND ────────────────────────────────────────────────────
+
+let bgTiles = [];
+let bgTile = null;
+let bgOffsetX = 0;
+let bgOffsetY = 0;
+const bgScrollSpeed = 0.45;
+const backgroundCount = 31;
+
 // ─── SPAWNING & SHOOTING ────────────────────────────────────────────────────
 let lastSpawnTime = 0;
 let spawnInterval = 1700;
@@ -90,6 +100,34 @@ const option2Descriptions = {
   "EMP Pulse": "Freeze enemy movement briefly.",
 };
 
+// ─── AUDIO ─────────────────────────────────────────────────────────
+
+let menuMusic;
+let gameMusic;
+let gameOverMusic;
+
+let currentMusic = null;
+let musicMuted = false;
+
+let masterVolume = 0.5;
+let musicVolume = 0.6;
+
+let showAudioPanel = false;
+let audioPanelBounds = null;
+
+let settingsButtonBounds = null;
+
+let draggingSlider = null;
+let sliderMaster = null;
+let sliderMusic = null;
+let sliderSfx;
+
+let sfxVolume = 0.75;
+let uiVolume = 0.7;
+
+let sounds = {};
+let soundCooldowns = {};
+
 // ─── SETUP / LAYOUT ─────────────────────────────────────────────────────────
 function preload() {
   for (let i = 0; i <= 60; i++) {
@@ -118,6 +156,110 @@ function preload() {
       loadImage(`./assets/enemies/tank/enemy_tank_${num}.png`),
     );
   }
+
+  menuMusic = loadSound("./assets/audio/menu.ogg");
+  gameMusic = loadSound("./assets/audio/game.ogg");
+  gameOverMusic = loadSound("./assets/audio/gameover.ogg");
+
+  sounds.sniper = loadSound("./assets/audio/sniper.ogg");
+  sounds.shield = loadSound("./assets/audio/shield.ogg");
+  sounds.playerDeath = loadSound("./assets/audio/playerdeath.ogg");
+  sounds.multiShot = loadSound("./assets/audio/multishot.ogg");
+  sounds.levelUp = loadSound("./assets/audio/levelup.ogg");
+  sounds.fire = loadSound("./assets/audio/fire.ogg");
+  sounds.explosion = loadSound("./assets/audio/explosion.ogg");
+  sounds.enemyDeath = loadSound("./assets/audio/enemydeath.ogg");
+  sounds.emp = loadSound("./assets/audio/emp.ogg");
+  sounds.boost = loadSound("./assets/audio/boost.ogg");
+  sounds.hit = loadSound("./assets/audio/hit.ogg");
+  sounds.enemyHit = loadSound("./assets/audio/enemyhit.ogg");
+  sounds.enemySpawn = loadSound("./assets/audio/enemyspawn.ogg");
+  sounds.upgradeOpen = loadSound("./assets/audio/upgradeopen.ogg");
+  sounds.click = loadSound("./assets/audio/click.ogg");
+  sounds.shieldBreak = loadSound("./assets/audio/shieldbreak.ogg");
+  sounds.enemyShoot = loadSound("./assets/audio/fire.ogg");
+
+  for (let i = 0; i < backgroundCount; i++) {
+    const num = i.toString().padStart(2, "0");
+    bgTiles.push(loadImage(`./assets/backgrounds/background_${num}.png`));
+  }
+}
+
+function drawAudioPanel() {
+  const w = min(340, width * 0.3);
+  const h = 220;
+  const x = width - w - 14;
+  const y = height - h - 70;
+
+  audioPanelBounds = { x, y, w, h };
+
+  drawPanel(x, y, w, h, 16);
+
+  push();
+  fill(255);
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(15);
+  text("Audio", x + 16, y + 18);
+
+  fill(180);
+  textSize(11);
+  text("Adjust music and game sound levels", x + 16, y + 36);
+  pop();
+
+  sliderMaster = drawSlider(x + 18, y + 62, w - 36, 10, "Master", masterVolume);
+
+  sliderMusic = drawSlider(x + 18, y + 112, w - 36, 10, "Music", musicVolume);
+
+  sliderSfx = drawSlider(x + 18, y + 162, w - 36, 10, "SFX", sfxVolume);
+}
+
+function drawMuteButton() {
+  const w = 58;
+  const h = 42;
+  const x = width - w - 14;
+  const y = height - h - 14;
+
+  muteButtonBounds = { x, y, w, h };
+
+  push();
+  noStroke();
+  fill(10, 14, 20, 185);
+  rect(x, y, w, h, 12);
+
+  stroke(255, 255, 255, 38);
+  noFill();
+  rect(x, y, w, h, 12);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(13);
+  text(musicMuted ? "Sound" : "Mute", x + w / 2, y + h / 2);
+  pop();
+
+  const sw = 58;
+  const sh = 42;
+  const sx = x;
+  const sy = y - sh - 8;
+
+  settingsButtonBounds = { x: sx, y: sy, w: sw, h: sh };
+
+  push();
+  noStroke();
+  fill(10, 14, 20, 185);
+  rect(sx, sy, sw, sh, 12);
+
+  stroke(255, 255, 255, 38);
+  noFill();
+  rect(sx, sy, sw, sh, 12);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(13);
+  text("Audio", sx + sw / 2, sy + sh / 2);
+  pop();
 }
 
 function getCanvasHost() {
@@ -167,6 +309,17 @@ function recalcLayout() {
   }
 }
 
+function chooseBackground() {
+  if (bgTiles.length === 0) {
+    bgTile = null;
+    return;
+  }
+
+  bgTile = random(bgTiles);
+  bgOffsetX = 0;
+  bgOffsetY = 0;
+}
+
 function setup() {
   const canvasHost = getCanvasHost();
   const canvas = createCanvas(canvasHost.clientWidth, canvasHost.clientHeight);
@@ -187,6 +340,32 @@ function setup() {
 
   recalcLayout();
   resetRunTimers();
+  configureAudio();
+  chooseBackground();
+}
+
+function configureAudio() {
+  if (menuMusic) menuMusic.setVolume(masterVolume * musicVolume);
+  if (gameMusic) gameMusic.setVolume(masterVolume * musicVolume);
+  if (gameOverMusic) gameOverMusic.setVolume(masterVolume * musicVolume);
+
+  for (const key in sounds) {
+    const s = sounds[key];
+    if (!s) continue;
+
+    // reuse same object safely
+    try {
+      s.playMode("restart");
+    } catch (e) {
+      // ignore if not supported in current build
+    }
+  }
+}
+
+function refreshMusicVolume() {
+  if (currentMusic) {
+    currentMusic.setVolume(masterVolume * musicVolume);
+  }
 }
 
 function windowResized() {
@@ -213,9 +392,88 @@ function resetRunTimers() {
   screenShake = 0;
 }
 
+function playMusic(track) {
+  if (musicMuted || !track) return;
+  if (currentMusic === track && track.isPlaying()) return;
+
+  if (currentMusic && currentMusic.isPlaying()) {
+    currentMusic.stop();
+  }
+
+  currentMusic = track;
+  currentMusic.setVolume(masterVolume * musicVolume);
+  currentMusic.loop();
+}
+
+function stopMusic() {
+  if (currentMusic && currentMusic.isPlaying()) {
+    currentMusic.stop();
+  }
+  currentMusic = null;
+}
+
+function updateMusic() {
+  if (musicMuted) return;
+
+  if (gameState === STATE_START || gameState === STATE_HELP) {
+    playMusic(menuMusic);
+  } else if (gameState === MENU || gameState === GAME) {
+    playMusic(gameMusic);
+  } else if (gameState === GAME_OVER) {
+    playMusic(gameOverMusic);
+  }
+}
+
+function updateBackgroundScroll() {
+  let dx = 0;
+  let dy = 0;
+
+  if (keyIsDown(87) || keyIsDown(UP_ARROW)) dy -= bgScrollSpeed;
+  if (keyIsDown(83) || keyIsDown(DOWN_ARROW)) dy += bgScrollSpeed;
+  if (keyIsDown(65) || keyIsDown(LEFT_ARROW)) dx -= bgScrollSpeed;
+  if (keyIsDown(68) || keyIsDown(RIGHT_ARROW)) dx += bgScrollSpeed;
+
+  bgOffsetX += dx;
+  bgOffsetY += dy;
+
+  if (bgTile) {
+    bgOffsetX = ((bgOffsetX % bgTile.width) + bgTile.width) % bgTile.width;
+    bgOffsetY = ((bgOffsetY % bgTile.height) + bgTile.height) % bgTile.height;
+  }
+}
+
+function drawScrollingBackground() {
+  background(0);
+
+  if (!bgTile) return;
+
+  const tileW = bgTile.width;
+  const tileH = bgTile.height;
+
+  const startX = -bgOffsetX - tileW;
+  const startY = -bgOffsetY - tileH;
+
+  for (let x = startX; x < width + tileW; x += tileW) {
+    for (let y = startY; y < height + tileH; y += tileH) {
+      image(bgTile, Math.round(x), Math.round(y));
+    }
+  }
+
+  // subtle darkening so gameplay/UI stay readable
+  noStroke();
+  fill(0, 0, 0, 90);
+  rect(0, 0, width, height);
+}
+
 // ─── MAIN DRAW LOOP ──────────────────────────────────────────────────────────
 function draw() {
-  background(0);
+  updateBackgroundScroll();
+  drawScrollingBackground();
+
+  push();
+  applyScreenShake();
+
+  updateMusic();
 
   push();
   applyScreenShake();
@@ -237,7 +495,10 @@ function draw() {
       drawGameOverScreen();
       break;
   }
-
+  drawMuteButton();
+  if (showAudioPanel) {
+    drawAudioPanel();
+  }
   pop();
 
   screenShake *= screenShakeDecay;
@@ -258,15 +519,122 @@ function addScreenShake(amount) {
 }
 
 // ─── INPUT ───────────────────────────────────────────────────────────────────
+
 function mouseReleased() {
+  userStartAudio();
+
+  if (draggingSlider) {
+    draggingSlider = null;
+    return;
+  }
+
+  if (
+    settingsButtonBounds &&
+    mouseX > settingsButtonBounds.x &&
+    mouseX < settingsButtonBounds.x + settingsButtonBounds.w &&
+    mouseY > settingsButtonBounds.y &&
+    mouseY < settingsButtonBounds.y + settingsButtonBounds.h
+  ) {
+    showAudioPanel = !showAudioPanel;
+    return;
+  }
+
+  if (
+    muteButtonBounds &&
+    mouseX > muteButtonBounds.x &&
+    mouseX < muteButtonBounds.x + muteButtonBounds.w &&
+    mouseY > muteButtonBounds.y &&
+    mouseY < muteButtonBounds.y + muteButtonBounds.h
+  ) {
+    musicMuted = !musicMuted;
+
+    if (musicMuted) {
+      if (currentMusic) currentMusic.stop();
+    } else {
+      updateMusic();
+    }
+    return;
+  }
+
   touchJustReleased = true;
   handleButtonTap(mouseX, mouseY);
 }
 
 function touchEnded() {
+  userStartAudio();
+
+  if (
+    muteButtonBounds &&
+    mouseX > muteButtonBounds.x &&
+    mouseX < muteButtonBounds.x + muteButtonBounds.w &&
+    mouseY > muteButtonBounds.y &&
+    mouseY < muteButtonBounds.y + muteButtonBounds.h
+  ) {
+    musicMuted = !musicMuted;
+
+    if (musicMuted) {
+      if (currentMusic) currentMusic.stop();
+    } else {
+      updateMusic();
+    }
+
+    isDraggingHelp = false;
+    return false;
+  }
+
+  if (
+    settingsButtonBounds &&
+    mouseX > settingsButtonBounds.x &&
+    mouseX < settingsButtonBounds.x + settingsButtonBounds.w &&
+    mouseY > settingsButtonBounds.y &&
+    mouseY < settingsButtonBounds.y + settingsButtonBounds.h
+  ) {
+    showAudioPanel = !showAudioPanel;
+    isDraggingHelp = false;
+    return false;
+  }
+
+  isDraggingHelp = false;
   touchJustReleased = true;
   handleButtonTap(mouseX, mouseY);
   return false;
+}
+
+function mousePressed() {
+  if (!showAudioPanel) return;
+
+  if (sliderMaster && isInsideSlider(sliderMaster)) {
+    draggingSlider = "master";
+    masterVolume = getSliderValue(sliderMaster);
+    refreshMusicVolume();
+    return;
+  }
+
+  if (sliderMusic && isInsideSlider(sliderMusic)) {
+    draggingSlider = "music";
+    musicVolume = getSliderValue(sliderMusic);
+    refreshMusicVolume();
+    return;
+  }
+
+  if (sliderSfx && isInsideSlider(sliderSfx)) {
+    draggingSlider = "sfx";
+    sfxVolume = getSliderValue(sliderSfx);
+    return;
+  }
+}
+function mouseDragged() {
+  if (!draggingSlider) return;
+
+  if (draggingSlider === "master" && sliderMaster) {
+    masterVolume = getSliderValue(sliderMaster);
+    refreshMusicVolume();
+  } else if (draggingSlider === "music" && sliderMusic) {
+    musicVolume = getSliderValue(sliderMusic);
+    refreshMusicVolume();
+  } else if (draggingSlider === "sfx" && sliderSfx) {
+    sfxVolume = getSliderValue(sliderSfx);
+  }
 }
 
 // ─── START MENU ──────────────────────────────────────────────────────────────
@@ -484,13 +852,16 @@ function drawStartMenu() {
   const helpPos = createVector(btnX, helpY);
   const btnSize = createVector(btnW, btnH);
 
+  const playHovered = isMouseOver(playPos, btnSize);
+  const helpHovered = isMouseOver(helpPos, btnSize);
+
   drawFancyButton(
     playPos.x,
     playY,
     btnW,
     btnH,
     "Play",
-    isMouseOver(playPos, btnSize),
+    playHovered,
     color(0, 200, 255),
   );
 
@@ -500,16 +871,58 @@ function drawStartMenu() {
     btnW,
     btnH,
     "Help",
-    isMouseOver(helpPos, btnSize),
+    helpHovered,
     color(180, 80, 255),
   );
 
   if (touchJustReleased) {
-    if (isMouseOver(playPos, btnSize)) {
+    if (playHovered) {
+      playSfx("click", { channel: "ui", volume: 0.7, cooldown: 80 });
       gameState = MENU;
-    } else if (isMouseOver(helpPos, btnSize)) {
+    } else if (helpHovered) {
+      playSfx("click", { channel: "ui", volume: 0.7, cooldown: 80 });
       gameState = STATE_HELP;
     }
+  }
+}
+
+function playSfx(name, opts = {}) {
+  const sound = sounds[name];
+  if (!sound) return;
+
+  const {
+    channel = "sfx", // "sfx" or "ui"
+    volume = 1,
+    rateMin = 1,
+    rateMax = 1,
+    cooldown = 0,
+    restart = true,
+  } = opts;
+
+  const now = millis();
+  const last = soundCooldowns[name] || 0;
+
+  if (cooldown > 0 && now - last < cooldown) {
+    return;
+  }
+
+  soundCooldowns[name] = now;
+
+  const channelVolume = channel === "ui" ? uiVolume : sfxVolume;
+
+  const finalVolume = masterVolume * channelVolume * volume;
+  const rate = random(rateMin, rateMax);
+
+  try {
+    if (restart && sound.isPlaying()) {
+      sound.stop();
+    }
+
+    sound.rate(rate);
+    sound.setVolume(finalVolume);
+    sound.play();
+  } catch (e) {
+    // fail quietly
   }
 }
 
@@ -581,6 +994,8 @@ function drawUpgradeMenu() {
 
   if (touchJustReleased) {
     if (leftHovered) {
+      playSfx("click", { channel: "ui", volume: 0.75, cooldown: 80 });
+      playSfx("boost", { channel: "sfx", volume: 0.8, cooldown: 100 });
       options1Lvl[chosenOption1]++;
       lastChosen1 = chosenOption1;
       applyUpgrade(chosenOption1);
@@ -589,6 +1004,8 @@ function drawUpgradeMenu() {
     }
 
     if (rightHovered) {
+      playSfx("click", { channel: "ui", volume: 0.75, cooldown: 80 });
+      playSfx("boost", { channel: "sfx", volume: 0.8, cooldown: 100 });
       options2Lvl[chosenOption2]++;
       lastChosen2 = chosenOption2;
 
@@ -607,6 +1024,7 @@ function drawUpgradeMenu() {
 // ─── MAIN GAME ───────────────────────────────────────────────────────────────
 function gameDraw() {
   if (player.health <= 0) {
+    playSfx("playerDeath", { channel: "sfx", volume: 0.9, cooldown: 300 });
     gameState = GAME_OVER;
     return;
   }
@@ -642,10 +1060,51 @@ function autoFireNearestEnemy() {
   if (!nearest) return;
 
   bullets.push(new Bullet(player.position.copy(), nearest.pos.copy()));
+  playSfx("fire", {
+    channel: "sfx",
+    volume: 0.35,
+    rateMin: 0.96,
+    rateMax: 1.04,
+    cooldown: 45,
+  });
   lastShotTime = millis();
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────────────
+function drawSlider(x, y, w, h, label, value) {
+  const clamped = constrain(value, 0, 1);
+  const handleX = x + clamped * w;
+
+  push();
+
+  fill(235);
+  noStroke();
+  textAlign(LEFT, CENTER);
+  textSize(12);
+  text(label, x, y - 12);
+
+  fill(180);
+  textAlign(RIGHT, CENTER);
+  text(`${round(clamped * 100)}%`, x + w, y - 12);
+
+  noStroke();
+  fill(255, 255, 255, 24);
+  rect(x, y, w, h, 999);
+
+  fill(0, 200, 255, 220);
+  rect(x, y, w * clamped, h, 999);
+
+  fill(255);
+  circle(handleX, y + h / 2, h * 2.1);
+
+  fill(255, 255, 255, 60);
+  circle(handleX, y + h / 2, h * 0.9);
+
+  pop();
+
+  return { x, y, w, h, value: clamped };
+}
+
 function drawPanel(x, y, w, h, radius = 12) {
   push();
   noStroke();
@@ -662,26 +1121,26 @@ function drawPanel(x, y, w, h, radius = 12) {
 function drawStatBar(x, y, w, h, label, valueText, progress, fillCol) {
   const clamped = constrain(progress, 0, 1);
 
-  drawPanel(x, y, w, h, 10);
+  drawPanel(x, y, w, h, 8);
 
   push();
-  textAlign(LEFT, TOP);
   noStroke();
-  fill(235);
-  textSize(13);
-  text(label, x + 10, y + 7);
 
-  fill(200);
-  textAlign(RIGHT, TOP);
-  text(valueText, x + w - 10, y + 7);
+  fill(230);
+  textAlign(LEFT, CENTER);
+  textSize(11);
+  text(label, x + 8, y + 9);
 
-  const barX = x + 10;
-  const barY = y + 28;
-  const barW = w - 20;
-  const barH = h - 38;
+  fill(190);
+  textAlign(RIGHT, CENTER);
+  text(valueText, x + w - 8, y + 9);
 
-  noStroke();
-  fill(255, 255, 255, 22);
+  const barX = x + 8;
+  const barY = y + 18;
+  const barW = w - 16;
+  const barH = h - 24;
+
+  fill(255, 255, 255, 20);
   rect(barX, barY, barW, barH, 999);
 
   fill(fillCol);
@@ -693,23 +1152,17 @@ function drawStatBar(x, y, w, h, label, valueText, progress, fillCol) {
 function drawTopInfoBlock() {
   const x = 12;
   const y = 12;
-  const w = max(190, width * 0.16);
-  const h = 68;
+  const w = max(110, width * 0.1);
+  const h = 34;
 
-  drawPanel(x, y, w, h, 12);
+  drawPanel(x, y, w, h, 10);
 
   push();
   noStroke();
   fill(255);
-  textAlign(LEFT, TOP);
-
-  textSize(14);
-  text(`Level ${player.level}`, x + 12, y + 10);
-
-  fill(190);
-  textSize(12);
-  text(`Kills ${enemiesKilled}`, x + 12, y + 32);
-  text(`Gained ${levelsGained}`, x + 12, y + 48);
+  textAlign(LEFT, CENTER);
+  textSize(13);
+  text(`Level ${player.level}`, x + 10, y + h / 2);
   pop();
 }
 
@@ -717,15 +1170,15 @@ function drawCooldownText(x, y, w, h, ready, lastTime, cd) {
   push();
   textAlign(CENTER, CENTER);
   noStroke();
-  textSize(11);
+  textSize(9);
 
   if (ready) {
     fill(255, 245);
-    text("READY", x + w / 2, y + h - 10);
+    text("READY", x + w / 2, y + h - 8);
   } else {
     const secs = max(0, (cd - (millis() - lastTime)) / 1000);
     fill(255, 220);
-    text(secs.toFixed(1) + "s", x + w / 2, y + h - 10);
+    text(secs.toFixed(1) + "s", x + w / 2, y + h - 8);
   }
 
   pop();
@@ -735,10 +1188,10 @@ function drawUI() {
   drawTopInfoBlock();
 
   const statX = 12;
-  const statW = max(220, width * 0.22);
-  const statH = 50;
-  const statGap = 10;
-  const statY = 92;
+  const statW = max(170, width * 0.17);
+  const statH = 30;
+  const statGap = 6;
+  const statY = 52;
 
   const xpProgress = constrain(player.xp / max(1, player.xpToNextLevel), 0, 1);
   drawStatBar(
@@ -762,7 +1215,7 @@ function drawUI() {
     statY + statH + statGap,
     statW,
     statH,
-    "Health",
+    "HP",
     `${player.health}/${player.maxHealth}`,
     healthProgress,
     color(255, 70, 70),
@@ -782,7 +1235,7 @@ function drawUI() {
       statY + (statH + statGap) * 2,
       statW,
       statH,
-      player.shieldOnCooldown ? "Shield Regen" : "Shield",
+      player.shieldOnCooldown ? "Shield" : "Shield",
       `${player.shieldCurrent}/${player.shieldMax}`,
       shieldProgress,
       player.shieldOnCooldown ? color(0, 180, 255) : color(80, 255, 140),
@@ -865,54 +1318,55 @@ function drawShieldBar() {
 function drawAbilityButton(idx, label, lvl, lastTime, cd, colr) {
   if (lvl <= 0) return;
 
-  const w = max(88, width * 0.09);
-  const h = max(64, height * 0.09);
+  const w = max(68, width * 0.07);
+  const h = max(50, height * 0.07);
   const x = width - w - 12;
-  const y = 12 + idx * (h + 10);
+  const y = 12 + idx * (h + 8);
   const ready = millis() - lastTime >= cd;
 
   let pulse = 1;
   if (ready) {
-    pulse = 1 + sin(frameCount * 0.14 + idx) * 0.04;
+    pulse = 1 + sin(frameCount * 0.14 + idx) * 0.035;
   }
 
   push();
 
-  drawPanel(x, y, w, h, 12);
+  drawPanel(x, y, w, h, 10);
 
   noStroke();
-  fill(ready ? colr : color(90));
-  rect(x + 6, y + 6, w - 12, h - 12, 10);
+  fill(ready ? colr : color(80));
+  rect(x + 5, y + 5, w - 10, h - 10, 8);
 
   if (ready) {
     noFill();
-    stroke(red(colr), green(colr), blue(colr), 120);
-    strokeWeight(2);
+    stroke(red(colr), green(colr), blue(colr), 110);
+    strokeWeight(1.5);
     rect(
-      x + 6 - pulse,
-      y + 6 - pulse,
-      w - 12 + pulse * 2,
-      h - 12 + pulse * 2,
-      12,
+      x + 5 - pulse,
+      y + 5 - pulse,
+      w - 10 + pulse * 2,
+      h - 10 + pulse * 2,
+      10,
     );
   } else {
     const frac = constrain((millis() - lastTime) / cd, 0, 1);
     noStroke();
     fill(0, 0, 0, 120);
-    rect(x + 6, y + 6, w - 12, h - 12, 10);
+    rect(x + 5, y + 5, w - 10, h - 10, 8);
 
-    fill(255, 80, 80, 150);
-    rect(x + 6, y + 6, (w - 12) * frac, h - 12, 10);
+    fill(255, 80, 80, 140);
+    rect(x + 5, y + 5, (w - 10) * frac, h - 10, 8);
   }
 
   fill(idx === 1 ? 20 : 255);
+  noStroke();
   textAlign(CENTER, CENTER);
-  textSize(min(16, w * 0.2));
-  text(label, x + w / 2, y + h * 0.38);
+  textSize(min(13, w * 0.18));
+  text(label, x + w / 2, y + h * 0.36);
 
   fill(idx === 1 ? 20 : 235);
-  textSize(11);
-  text(`Lv ${lvl}`, x + w / 2, y + h * 0.62);
+  textSize(9);
+  text(`Lv ${lvl}`, x + w / 2, y + h * 0.58);
 
   pop();
 
@@ -997,6 +1451,19 @@ function drawGameOverScreen() {
     }
 
     if (isMouseOver(menuPos, btnSize)) {
+      resetGame();
+      gameState = STATE_START;
+    }
+  }
+  if (touchJustReleased) {
+    if (isMouseOver(restartPos, btnSize)) {
+      playSfx("click", { channel: "ui", volume: 0.7, cooldown: 80 });
+      resetGame();
+      gameState = GAME;
+    }
+
+    if (isMouseOver(menuPos, btnSize)) {
+      playSfx("click", { channel: "ui", volume: 0.7, cooldown: 80 });
       resetGame();
       gameState = STATE_START;
     }
@@ -1125,6 +1592,7 @@ function drawHelp() {
   );
 
   if (touchJustReleased && isMouseOver(btnPos, btnSize)) {
+    playSfx("click", { channel: "ui", volume: 0.7, cooldown: 80 });
     gameState = STATE_START;
     helpScroll = 0;
   }
@@ -1152,13 +1620,6 @@ function touchMoved() {
     lastTouchY = mouseY;
     return false;
   }
-}
-
-function touchEnded() {
-  isDraggingHelp = false;
-  touchJustReleased = true;
-  handleButtonTap(mouseX, mouseY);
-  return false;
 }
 
 // ─── RESET ───────────────────────────────────────────────────────────────────
@@ -1200,6 +1661,7 @@ function resetGame() {
 
   chooseOptions();
   resetRunTimers();
+  chooseBackground();
 }
 
 // ─── GAME LOGIC ──────────────────────────────────────────────────────────────
@@ -1244,6 +1706,7 @@ function handleButtonTap(tx, ty) {
       enemyBullets = [];
       lastExplosionTime = millis();
       addScreenShake(10);
+      playSfx("explosion", { channel: "sfx", volume: 0.9, cooldown: 120 });
       return;
     }
   }
@@ -1254,6 +1717,7 @@ function handleButtonTap(tx, ty) {
       sniperActive = true;
       sniperStartTime = millis();
       lastSniperTime = millis();
+      playSfx("sniper", { channel: "sfx", volume: 0.8, cooldown: 120 });
       return;
     }
   }
@@ -1267,6 +1731,7 @@ function handleButtonTap(tx, ty) {
         const dir = p5.Vector.fromAngle(angle);
         const target = p5.Vector.add(player.position, dir.mult(10));
         bullets.push(new Bullet(player.position.copy(), target));
+        playSfx("multiShot", { channel: "sfx", volume: 0.8, cooldown: 120 });
       }
       lastMultiTime = millis();
       addScreenShake(4);
@@ -1281,6 +1746,7 @@ function handleButtonTap(tx, ty) {
       empStartTime = millis();
       lastEMPTime = millis();
       addScreenShake(6);
+      playSfx("emp", { channel: "sfx", volume: 0.85, cooldown: 120 });
     }
   }
 }
@@ -1306,7 +1772,13 @@ function updateBullets() {
         enemy.health -= bulletDamage;
         enemy.hitFlash = 6;
         hit = true;
-
+        playSfx("enemyHit", {
+          channel: "sfx",
+          volume: 0.3,
+          rateMin: 0.95,
+          rateMax: 1.08,
+          cooldown: 35,
+        });
         if (!sniperActive) {
           break;
         }
@@ -1379,6 +1851,13 @@ function spawnEnemy() {
   const type = weightedEnemyType();
   const enemy = new Enemy(createVector(x, y), type);
   enemies.push(enemy);
+  playSfx("enemySpawn", {
+    channel: "sfx",
+    volume: 0.22,
+    rateMin: 0.95,
+    rateMax: 1.05,
+    cooldown: 80,
+  });
 }
 
 function getNearestEnemy() {
@@ -1401,15 +1880,34 @@ function damagePlayer(amount) {
 
   if (player.shieldCurrent > 0) {
     player.shieldCurrent -= amount;
+    playSfx("shield", {
+      channel: "sfx",
+      volume: 0.45,
+      rateMin: 0.98,
+      rateMax: 1.02,
+      cooldown: 80,
+    });
     while (player.shieldCurrent < 0) {
       const overflow = -player.shieldCurrent;
       player.shieldCurrent = 0;
       player.health -= overflow;
+      playSfx("hit", {
+        channel: "sfx",
+        volume: 0.7,
+        rateMin: 0.98,
+        rateMax: 1.02,
+        cooldown: 120,
+      });
     }
 
     if (player.shieldCurrent === 0) {
       player.shieldOnCooldown = true;
       player.shieldRegenTimer = millis();
+      playSfx("shieldBreak", {
+        channel: "sfx",
+        volume: 0.75,
+        cooldown: 120,
+      });
     }
   } else {
     player.health -= amount;
@@ -1465,6 +1963,13 @@ function updateEnemies() {
       enemyBullets.push(
         new Bullet(enemy.pos.copy(), player.position.copy(), true),
       );
+      playSfx("enemyShoot", {
+        channel: "sfx",
+        volume: 0.28,
+        rateMin: 0.92,
+        rateMax: 1.0,
+        cooldown: 90,
+      });
       enemy.lastShotTime = millis();
     }
 
@@ -1477,6 +1982,13 @@ function updateEnemies() {
 function handleEnemyDeath(enemy, index) {
   enemiesKilled++;
   player.xp += enemy.xpValue || 0;
+  playSfx("enemyDeath", {
+    channel: "sfx",
+    volume: 0.55,
+    rateMin: 0.94,
+    rateMax: 1.06,
+    cooldown: 45,
+  });
 
   if (enemy.type === "splitter") {
     let sprinterCount = 0;
@@ -1511,6 +2023,8 @@ function handleEnemyDeath(enemy, index) {
   }
 
   if (leveled) {
+    playSfx("levelUp", { channel: "sfx", volume: 0.9, cooldown: 100 });
+    playSfx("upgradeOpen", { channel: "ui", volume: 0.7, cooldown: 100 });
     chooseOptions();
     gameState = MENU;
   }
@@ -1567,6 +2081,13 @@ function chooseOptions() {
 
 function applyUpgrade(idx) {
   const opt = options1[idx];
+  playSfx("boost", {
+    channel: "sfx",
+    volume: 0.65,
+    rateMin: 0.98,
+    rateMax: 1.04,
+    cooldown: 80,
+  });
 
   if (opt === "Move speed") {
     player.maxSpeed += 0.25;
@@ -1599,4 +2120,17 @@ function getMultiCooldown() {
 
 function getEMPCooldown() {
   return max(9000, 18000 - options2Lvl[3] * 1200);
+}
+
+function isInsideSlider(slider) {
+  return (
+    mouseX > slider.x &&
+    mouseX < slider.x + slider.w &&
+    mouseY > slider.y &&
+    mouseY < slider.y + slider.h
+  );
+}
+
+function getSliderValue(slider) {
+  return constrain((mouseX - slider.x) / slider.w, 0, 1);
 }
