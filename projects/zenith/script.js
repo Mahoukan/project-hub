@@ -2,6 +2,11 @@
 let menu1Pos, menu2Pos, menuSize, text1Pos, text2Pos, barSize;
 let touchJustReleased = false;
 
+let helpScroll = 0;
+let helpMaxScroll = 0;
+let isDraggingHelp = false;
+let lastTouchY = 0;
+
 const STATE_START = 0;
 const MENU = 1;
 const GAME = 2;
@@ -23,8 +28,19 @@ let textMaxWidth, smallestSize;
 
 // ─── PLAYER, ENEMIES, BULLETS ───────────────────────────────────────────────
 let player;
+let playerFrames = [];
+
 let enemies = [];
+let enemyFrames = {
+  normal: [],
+  sprinter: [],
+  splitter: [],
+  tank: [],
+};
+
 let bullets = [];
+let bulletFrames = [];
+
 let enemyBullets = [];
 
 // ─── ABILITIES ──────────────────────────────────────────────────────────────
@@ -41,11 +57,11 @@ let empStartTime = 0;
 
 // ─── SPAWNING & SHOOTING ────────────────────────────────────────────────────
 let lastSpawnTime = 0;
-let spawnInterval = 1500;
-const spawnRateDecrease = 30;
+let spawnInterval = 1700;
+const spawnRateDecrease = 40;
+const spawnRampEvery = 7000;
+const minSpawnInterval = 420;
 let lastSpawnRampTime = 0;
-const spawnRampEvery = 5000;
-const minSpawnInterval = 220;
 
 let lastShotTime = 0;
 let shootDelay = 1000;
@@ -59,7 +75,51 @@ let screenShakeDecay = 0.88;
 let lastChosen1 = -1;
 let lastChosen2 = -1;
 
+const option1Descriptions = {
+  "Move speed": "Move faster and reposition more easily.",
+  "Fire speed": "Shoot more often.",
+  Damage: "Each bullet hits harder.",
+  Health: "Increase max health and fully heal.",
+  Shield: "Adds a regenerating shield layer.",
+};
+
+const option2Descriptions = {
+  Explosion: "Clear enemies and bullets instantly.",
+  "Sniper bullet": "Shots pierce through enemies for a short time.",
+  "Multi-shot": "Fire bullets in all directions.",
+  "EMP Pulse": "Freeze enemy movement briefly.",
+};
+
 // ─── SETUP / LAYOUT ─────────────────────────────────────────────────────────
+function preload() {
+  for (let i = 0; i <= 60; i++) {
+    const num = i.toString().padStart(2, "0");
+
+    playerFrames.push(loadImage(`./assets/player/player_${num}.png`));
+    bulletFrames.push(loadImage(`./assets/bullets/bullet_${num}.png`));
+
+    enemyFrames.normal.push(
+      loadImage(`./assets/enemies/normal/enemy_normal_${num}.png`),
+    );
+
+    enemyFrames.sprinter.push(
+      loadImage(`./assets/enemies/sprinter/enemy_sprinter_${num}.png`),
+    );
+
+    enemyFrames.splitter.push(
+      loadImage(`./assets/enemies/splitter/enemy_splitter_${num}.png`),
+    );
+  }
+
+  for (let i = 0; i <= 90; i++) {
+    const num = i.toString().padStart(2, "0");
+
+    enemyFrames.tank.push(
+      loadImage(`./assets/enemies/tank/enemy_tank_${num}.png`),
+    );
+  }
+}
+
 function getCanvasHost() {
   return document.getElementById("canvas");
 }
@@ -74,11 +134,11 @@ function recalcLayout() {
 
   text1Pos = createVector(
     menu1Pos.x + menuSize.x / 2,
-    menu1Pos.y + menu1Pos.y / 3
+    menu1Pos.y + menu1Pos.y / 3,
   );
   text2Pos = createVector(
     menu2Pos.x + menuSize.x / 2,
-    menu2Pos.y + menu2Pos.y / 3
+    menu2Pos.y + menu2Pos.y / 3,
   );
 
   textMaxWidth = menuSize.y * 0.9;
@@ -94,8 +154,16 @@ function recalcLayout() {
   barSize = createVector(width / 5, height / 24);
 
   if (player) {
-    player.position.x = constrain(player.position.x, player.halfSize, width - player.halfSize);
-    player.position.y = constrain(player.position.y, player.halfSize, height - player.halfSize);
+    player.position.x = constrain(
+      player.position.x,
+      player.halfSize,
+      width - player.halfSize,
+    );
+    player.position.y = constrain(
+      player.position.y,
+      player.halfSize,
+      height - player.halfSize,
+    );
   }
 }
 
@@ -103,12 +171,19 @@ function setup() {
   const canvasHost = getCanvasHost();
   const canvas = createCanvas(canvasHost.clientWidth, canvasHost.clientHeight);
   canvas.parent("canvas");
+  pixelDensity(1);
 
   textAlign(CENTER, CENTER);
   textFont("sans-serif");
 
   chooseOptions();
-  player = new Player(createVector(width / 2, height / 2), 30, 10, 5);
+  player = new Player(createVector(width / 2, height / 2), 64, 10, 5);
+
+  for (const img of bulletFrames) {
+    if (img.width > 64 || img.height > 64) {
+      img.resize(64, 64);
+    }
+  }
 
   recalcLayout();
   resetRunTimers();
@@ -172,7 +247,10 @@ function draw() {
 
 function applyScreenShake() {
   if (screenShake <= 0) return;
-  translate(random(-screenShake, screenShake), random(-screenShake, screenShake));
+  translate(
+    random(-screenShake, screenShake),
+    random(-screenShake, screenShake),
+  );
 }
 
 function addScreenShake(amount) {
@@ -192,24 +270,244 @@ function touchEnded() {
 }
 
 // ─── START MENU ──────────────────────────────────────────────────────────────
+function drawCenteredPanel(x, y, w, h, radius = 18) {
+  push();
+  rectMode(CORNER);
+  noStroke();
+  fill(10, 14, 20, 190);
+  rect(x, y, w, h, radius);
+
+  stroke(255, 255, 255, 30);
+  strokeWeight(1.5);
+  noFill();
+  rect(x, y, w, h, radius);
+  pop();
+}
+
+function drawFancyButton(x, y, w, h, label, hovered, accent = null) {
+  push();
+
+  noStroke();
+  fill(18, 24, 32, hovered ? 230 : 190);
+  rect(x, y, w, h, 16);
+
+  if (accent) {
+    fill(red(accent), green(accent), blue(accent), hovered ? 150 : 95);
+    rect(x + 6, y + 6, w - 12, h - 12, 12);
+  } else {
+    fill(255, hovered ? 42 : 26);
+    rect(x + 6, y + 6, w - 12, h - 12, 12);
+  }
+
+  stroke(255, 255, 255, hovered ? 70 : 28);
+  strokeWeight(1.5);
+  noFill();
+  rect(x, y, w, h, 16);
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(min(26, h * 0.3, w * 0.16));
+  text(label, x + w / 2, y + h / 2);
+
+  pop();
+}
+
+function drawCardTitle(textValue, x, y, w) {
+  push();
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+  textSize(min(26, w * 0.085));
+  text(textValue, x + w / 2, y);
+  pop();
+}
+
+function drawUpgradeIcon(kind, cx, cy, size, col) {
+  push();
+  translate(cx, cy);
+  stroke(col);
+  strokeWeight(2.5);
+  noFill();
+
+  const s = size * 0.5;
+
+  switch (kind) {
+    case "Move speed":
+      line(-s * 0.9, 0, s * 0.6, 0);
+      line(s * 0.15, -s * 0.35, s * 0.6, 0);
+      line(s * 0.15, s * 0.35, s * 0.6, 0);
+      break;
+
+    case "Fire speed":
+      line(-s * 0.8, 0, s * 0.8, 0);
+      circle(0, 0, s * 0.9);
+      break;
+
+    case "Damage":
+      line(0, -s * 0.9, 0, s * 0.9);
+      line(-s * 0.75, 0, s * 0.75, 0);
+      break;
+
+    case "Health":
+      line(0, -s * 0.8, 0, s * 0.8);
+      line(-s * 0.8, 0, s * 0.8, 0);
+      break;
+
+    case "Shield":
+      beginShape();
+      vertex(0, -s);
+      vertex(s * 0.75, -s * 0.35);
+      vertex(s * 0.55, s * 0.75);
+      vertex(0, s);
+      vertex(-s * 0.55, s * 0.75);
+      vertex(-s * 0.75, -s * 0.35);
+      endShape(CLOSE);
+      break;
+
+    case "Explosion":
+      for (let i = 0; i < 8; i++) {
+        const a = (TWO_PI / 8) * i;
+        line(cos(a) * s * 0.25, sin(a) * s * 0.25, cos(a) * s, sin(a) * s);
+      }
+      circle(0, 0, s * 0.5);
+      break;
+
+    case "Sniper bullet":
+      line(-s * 0.9, 0, s * 0.9, 0);
+      line(s * 0.35, -s * 0.3, s * 0.9, 0);
+      line(s * 0.35, s * 0.3, s * 0.9, 0);
+      break;
+
+    case "Multi-shot":
+      line(0, -s * 0.95, 0, s * 0.25);
+      line(-s * 0.82, s * 0.5, 0, s * 0.05);
+      line(s * 0.82, s * 0.5, 0, s * 0.05);
+      break;
+
+    case "EMP Pulse":
+      circle(0, 0, s * 1.2);
+      circle(0, 0, s * 0.65);
+      circle(0, 0, s * 0.2);
+      break;
+
+    default:
+      circle(0, 0, s);
+      break;
+  }
+
+  pop();
+}
+
+function drawUpgradeCard(
+  x,
+  y,
+  w,
+  h,
+  title,
+  levelText,
+  description,
+  hovered,
+  accentCol,
+) {
+  push();
+
+  noStroke();
+  fill(12, 18, 26, hovered ? 235 : 205);
+  rect(x, y, w, h, 18);
+
+  fill(red(accentCol), green(accentCol), blue(accentCol), hovered ? 105 : 70);
+  rect(x + 8, y + 8, w - 16, h - 16, 14);
+
+  stroke(255, 255, 255, hovered ? 75 : 30);
+  strokeWeight(1.5);
+  noFill();
+  rect(x, y, w, h, 18);
+
+  drawUpgradeIcon(title, x + w / 2, y + h * 0.2, min(w, h) * 0.16, color(255));
+
+  fill(255);
+  noStroke();
+  textAlign(CENTER, CENTER);
+
+  textSize(min(24, w * 0.09));
+  text(title, x + w / 2, y + h * 0.42);
+
+  fill(230);
+  textSize(min(18, w * 0.065));
+  text(levelText, x + w / 2, y + h * 0.6);
+
+  fill(215);
+  textSize(min(14, w * 0.048));
+  textAlign(CENTER, TOP);
+  text(description, x + 22, y + h * 0.7, w - 44, h * 0.2);
+
+  if (hovered) {
+    stroke(red(accentCol), green(accentCol), blue(accentCol), 120);
+    strokeWeight(2);
+    noFill();
+    rect(x - 2, y - 2, w + 4, h + 4, 20);
+  }
+
+  pop();
+}
+
 function drawStartMenu() {
   textAlign(CENTER, CENTER);
 
+  const titleY = height * 0.23;
+  const subtitleY = titleY + 54;
+
   fill(255);
-  textSize(sizeForWidth("ZENITH", width / 3, 64));
-  text("ZENITH", width / 2, height / 4);
+  textSize(min(72, width * 0.12));
+  text("ZENITH", width / 2, titleY);
 
-  const bs = createVector(width / 3, height / 6);
-  const p1 = createVector(width / 2 - bs.x / 2, 2 * height / 3 - bs.y - 20);
-  const p2 = createVector(width / 2 - bs.x / 2, 2 * height / 3);
+  fill(180);
+  textSize(min(20, width * 0.028));
+  text("Survive, level up, and build your loadout", width / 2, subtitleY);
 
-  drawMenuButton(p1, bs, "Play");
-  drawMenuButton(p2, bs, "Help");
+  const panelW = min(width * 0.62, 520);
+  const panelH = min(height * 0.34, 260);
+  const panelX = width / 2 - panelW / 2;
+  const panelY = height * 0.42;
+
+  drawCenteredPanel(panelX, panelY, panelW, panelH, 22);
+
+  const btnW = panelW * 0.72;
+  const btnH = panelH * 0.24;
+  const btnX = width / 2 - btnW / 2;
+
+  const playY = panelY + panelH * 0.18;
+  const helpY = panelY + panelH * 0.56;
+
+  const playPos = createVector(btnX, playY);
+  const helpPos = createVector(btnX, helpY);
+  const btnSize = createVector(btnW, btnH);
+
+  drawFancyButton(
+    playPos.x,
+    playY,
+    btnW,
+    btnH,
+    "Play",
+    isMouseOver(playPos, btnSize),
+    color(0, 200, 255),
+  );
+
+  drawFancyButton(
+    helpPos.x,
+    helpY,
+    btnW,
+    btnH,
+    "Help",
+    isMouseOver(helpPos, btnSize),
+    color(180, 80, 255),
+  );
 
   if (touchJustReleased) {
-    if (isMouseOver(p1, bs)) {
+    if (isMouseOver(playPos, btnSize)) {
       gameState = MENU;
-    } else if (isMouseOver(p2, bs)) {
+    } else if (isMouseOver(helpPos, btnSize)) {
       gameState = STATE_HELP;
     }
   }
@@ -226,31 +524,63 @@ function drawMenuButton(pos, size, label) {
 
 // ─── UPGRADE MENU ────────────────────────────────────────────────────────────
 function drawUpgradeMenu() {
-  fill(255, isMouseOver(menu1Pos, menuSize) ? 150 : 50);
-  rect(menu1Pos.x, menu1Pos.y, menuSize.x, menuSize.y, 10);
+  background(0);
 
-  fill(255, isMouseOver(menu2Pos, menuSize) ? 150 : 50);
-  rect(menu2Pos.x, menu2Pos.y, menuSize.x, menuSize.y, 10);
-
-  fill(255);
   textAlign(CENTER, CENTER);
 
-  textSize(isMouseOver(menu1Pos, menuSize) ? smallestSize * 1.05 : smallestSize);
-  text(
-    `${options1[chosenOption1]}\nLv ${options1Lvl[chosenOption1]} → ${options1Lvl[chosenOption1] + 1}`,
-    text1Pos.x,
-    text1Pos.y
+  fill(255);
+  textSize(min(52, width * 0.08));
+  text("Choose an Upgrade", width / 2, height * 0.16);
+
+  fill(180);
+  textSize(min(18, width * 0.026));
+  text(`Level ${player.level}`, width / 2, height * 0.22);
+
+  const cardGap = width * 0.04;
+  const cardW = min(width * 0.34, 320);
+  const cardH = min(height * 0.34, 240);
+
+  const totalW = cardW * 2 + cardGap;
+  const startX = width / 2 - totalW / 2;
+  const cardY = height * 0.34;
+
+  const leftPos = createVector(startX, cardY);
+  const rightPos = createVector(startX + cardW + cardGap, cardY);
+  const cardSize = createVector(cardW, cardH);
+
+  const leftHovered = isMouseOver(leftPos, cardSize);
+  const rightHovered = isMouseOver(rightPos, cardSize);
+
+  drawUpgradeCard(
+    leftPos.x,
+    leftPos.y,
+    cardW,
+    cardH,
+    options1[chosenOption1],
+    `Lv ${options1Lvl[chosenOption1]} → ${options1Lvl[chosenOption1] + 1}`,
+    option1Descriptions[options1[chosenOption1]] || "",
+    leftHovered,
+    color(0, 200, 255),
   );
 
-  textSize(isMouseOver(menu2Pos, menuSize) ? smallestSize * 1.05 : smallestSize);
-  text(
-    `${options2[chosenOption2]}\nLv ${options2Lvl[chosenOption2]} → ${options2Lvl[chosenOption2] + 1}`,
-    text2Pos.x,
-    text2Pos.y
+  drawUpgradeCard(
+    rightPos.x,
+    rightPos.y,
+    cardW,
+    cardH,
+    options2[chosenOption2],
+    `Lv ${options2Lvl[chosenOption2]} → ${options2Lvl[chosenOption2] + 1}`,
+    option2Descriptions[options2[chosenOption2]] || "",
+    rightHovered,
+    color(180, 80, 255),
   );
+
+  fill(160);
+  textSize(min(16, width * 0.022));
+  text("Pick one to continue", width / 2, cardY + cardH + 42);
 
   if (touchJustReleased) {
-    if (isMouseOver(menu1Pos, menuSize)) {
+    if (leftHovered) {
       options1Lvl[chosenOption1]++;
       lastChosen1 = chosenOption1;
       applyUpgrade(chosenOption1);
@@ -258,11 +588,12 @@ function drawUpgradeMenu() {
       gameState = GAME;
     }
 
-    if (isMouseOver(menu2Pos, menuSize)) {
+    if (rightHovered) {
       options2Lvl[chosenOption2]++;
       lastChosen2 = chosenOption2;
 
-      if (chosenOption2 === 0) lastExplosionTime = millis() - getExplosionCooldown();
+      if (chosenOption2 === 0)
+        lastExplosionTime = millis() - getExplosionCooldown();
       if (chosenOption2 === 1) lastSniperTime = millis() - getSniperCooldown();
       if (chosenOption2 === 2) lastMultiTime = millis() - getMultiCooldown();
       if (chosenOption2 === 3) lastEMPTime = millis() - getEMPCooldown();
@@ -283,10 +614,10 @@ function gameDraw() {
   handleShieldRegen();
   player.updateDamageFlash();
 
-  drawUI();
   updatePlayerMovement();
   player.display();
 
+  drawUI();
   autoFireNearestEnemy();
   updateBullets();
   handleEnemySpawning();
@@ -315,42 +646,184 @@ function autoFireNearestEnemy() {
 }
 
 // ─── UI ──────────────────────────────────────────────────────────────────────
-function drawUI() {
+function drawPanel(x, y, w, h, radius = 12) {
+  push();
   noStroke();
+  fill(10, 14, 20, 180);
+  rect(x, y, w, h, radius);
 
-  fill(0, 200, 255);
-  const xpW = map(player.xp, 0, max(1, player.xpToNextLevel), 0, barSize.x);
-  rect(10, 10, xpW, barSize.y);
+  stroke(255, 255, 255, 28);
+  strokeWeight(1.5);
   noFill();
-  stroke(255);
-  rect(10, 10, barSize.x, barSize.y);
+  rect(x, y, w, h, radius);
+  pop();
+}
 
-  fill(255);
-  textAlign(LEFT, CENTER);
-  textSize(sizeForWidth(`${player.xp}/${player.xpToNextLevel}`, width / 30, 64));
-  text(`${player.xp}/${player.xpToNextLevel}`, barSize.x + 20, 30);
+function drawStatBar(x, y, w, h, label, valueText, progress, fillCol) {
+  const clamped = constrain(progress, 0, 1);
+
+  drawPanel(x, y, w, h, 10);
+
+  push();
+  textAlign(LEFT, TOP);
+  noStroke();
+  fill(235);
+  textSize(13);
+  text(label, x + 10, y + 7);
+
+  fill(200);
+  textAlign(RIGHT, TOP);
+  text(valueText, x + w - 10, y + 7);
+
+  const barX = x + 10;
+  const barY = y + 28;
+  const barW = w - 20;
+  const barH = h - 38;
 
   noStroke();
-  fill(255, 0, 0);
-  const hW = map(player.health, 0, player.maxHealth, 0, barSize.x);
-  rect(10, barSize.y + 20, hW, barSize.y);
+  fill(255, 255, 255, 22);
+  rect(barX, barY, barW, barH, 999);
 
-  noFill();
-  stroke(255);
-  rect(10, barSize.y + 20, barSize.x, barSize.y);
+  fill(fillCol);
+  rect(barX, barY, barW * clamped, barH, 999);
 
-  fill(255);
+  pop();
+}
+
+function drawTopInfoBlock() {
+  const x = 12;
+  const y = 12;
+  const w = max(190, width * 0.16);
+  const h = 68;
+
+  drawPanel(x, y, w, h, 12);
+
+  push();
   noStroke();
-  text(`${player.health}/${player.maxHealth}`, barSize.x + 20, barSize.y + 40);
+  fill(255);
+  textAlign(LEFT, TOP);
 
-  if (player.shieldMax > 0) {
-    drawShieldBar();
+  textSize(14);
+  text(`Level ${player.level}`, x + 12, y + 10);
+
+  fill(190);
+  textSize(12);
+  text(`Kills ${enemiesKilled}`, x + 12, y + 32);
+  text(`Gained ${levelsGained}`, x + 12, y + 48);
+  pop();
+}
+
+function drawCooldownText(x, y, w, h, ready, lastTime, cd) {
+  push();
+  textAlign(CENTER, CENTER);
+  noStroke();
+  textSize(11);
+
+  if (ready) {
+    fill(255, 245);
+    text("READY", x + w / 2, y + h - 10);
+  } else {
+    const secs = max(0, (cd - (millis() - lastTime)) / 1000);
+    fill(255, 220);
+    text(secs.toFixed(1) + "s", x + w / 2, y + h - 10);
   }
 
-  drawAbilityButton(0, "Explosion", options2Lvl[0], lastExplosionTime, getExplosionCooldown(), color(0, 200, 255));
-  drawAbilityButton(1, "Sniper", options2Lvl[1], lastSniperTime, getSniperCooldown(), color(200, 200, 0));
-  drawAbilityButton(2, "Multi-shot", options2Lvl[2], lastMultiTime, getMultiCooldown(), color(0, 200, 0));
-  drawAbilityButton(3, "EMP Pulse", options2Lvl[3], lastEMPTime, getEMPCooldown(), color(150, 0, 255));
+  pop();
+}
+
+function drawUI() {
+  drawTopInfoBlock();
+
+  const statX = 12;
+  const statW = max(220, width * 0.22);
+  const statH = 50;
+  const statGap = 10;
+  const statY = 92;
+
+  const xpProgress = constrain(player.xp / max(1, player.xpToNextLevel), 0, 1);
+  drawStatBar(
+    statX,
+    statY,
+    statW,
+    statH,
+    "XP",
+    `${player.xp}/${player.xpToNextLevel}`,
+    xpProgress,
+    color(0, 200, 255),
+  );
+
+  const healthProgress = constrain(
+    player.health / max(1, player.maxHealth),
+    0,
+    1,
+  );
+  drawStatBar(
+    statX,
+    statY + statH + statGap,
+    statW,
+    statH,
+    "Health",
+    `${player.health}/${player.maxHealth}`,
+    healthProgress,
+    color(255, 70, 70),
+  );
+
+  if (player.shieldMax > 0) {
+    const shieldProgress = player.shieldOnCooldown
+      ? constrain(
+          (millis() - player.shieldRegenTimer) / player.shieldRegenDelay,
+          0,
+          1,
+        )
+      : constrain(player.shieldCurrent / max(1, player.shieldMax), 0, 1);
+
+    drawStatBar(
+      statX,
+      statY + (statH + statGap) * 2,
+      statW,
+      statH,
+      player.shieldOnCooldown ? "Shield Regen" : "Shield",
+      `${player.shieldCurrent}/${player.shieldMax}`,
+      shieldProgress,
+      player.shieldOnCooldown ? color(0, 180, 255) : color(80, 255, 140),
+    );
+  }
+
+  drawAbilityButton(
+    0,
+    "Explosion",
+    options2Lvl[0],
+    lastExplosionTime,
+    getExplosionCooldown(),
+    color(0, 200, 255),
+  );
+
+  drawAbilityButton(
+    1,
+    "Sniper",
+    options2Lvl[1],
+    lastSniperTime,
+    getSniperCooldown(),
+    color(230, 210, 70),
+  );
+
+  drawAbilityButton(
+    2,
+    "Multi",
+    options2Lvl[2],
+    lastMultiTime,
+    getMultiCooldown(),
+    color(0, 220, 120),
+  );
+
+  drawAbilityButton(
+    3,
+    "EMP",
+    options2Lvl[3],
+    lastEMPTime,
+    getEMPCooldown(),
+    color(180, 80, 255),
+  );
 }
 
 function drawShieldBar() {
@@ -369,7 +842,7 @@ function drawShieldBar() {
     const prog = constrain(
       (millis() - player.shieldRegenTimer) / player.shieldRegenDelay,
       0,
-      1
+      1,
     );
 
     fill(0, 200, 255);
@@ -382,77 +855,148 @@ function drawShieldBar() {
 
   fill(255);
   noStroke();
-  text(`${player.shieldCurrent}/${player.shieldMax}`, barSize.x + 20, barSize.y * 2 + 50);
+  text(
+    `${player.shieldCurrent}/${player.shieldMax}`,
+    barSize.x + 20,
+    barSize.y * 2 + 50,
+  );
 }
 
 function drawAbilityButton(idx, label, lvl, lastTime, cd, colr) {
   if (lvl <= 0) return;
 
-  const sz = createVector(width / 12, height / 12);
-  const pos = createVector(width - sz.x - 10, idx * (sz.y + 10) + 10);
+  const w = max(88, width * 0.09);
+  const h = max(64, height * 0.09);
+  const x = width - w - 12;
+  const y = 12 + idx * (h + 10);
   const ready = millis() - lastTime >= cd;
-
-  noStroke();
 
   let pulse = 1;
   if (ready) {
-    pulse = 0.9 + sin(frameCount * 0.15 + idx) * 0.08 + 0.12;
+    pulse = 1 + sin(frameCount * 0.14 + idx) * 0.04;
   }
 
-  fill(ready ? colr : 80);
-  rect(pos.x, pos.y, sz.x, sz.y, 5);
+  push();
+
+  drawPanel(x, y, w, h, 12);
+
+  noStroke();
+  fill(ready ? colr : color(90));
+  rect(x + 6, y + 6, w - 12, h - 12, 10);
 
   if (ready) {
     noFill();
-    stroke(red(colr), green(colr), blue(colr), 140);
+    stroke(red(colr), green(colr), blue(colr), 120);
     strokeWeight(2);
-    rect(pos.x - pulse * 2, pos.y - pulse * 2, sz.x + pulse * 4, sz.y + pulse * 4, 7);
-  }
-
-  fill(idx === 1 ? 0 : 255);
-  noStroke();
-  textAlign(CENTER, CENTER);
-  textSize(sizeForWidth(label, sz.x - 20, 32));
-  text(label, pos.x + sz.x / 2, pos.y + sz.y / 2);
-
-  if (!ready) {
+    rect(
+      x + 6 - pulse,
+      y + 6 - pulse,
+      w - 12 + pulse * 2,
+      h - 12 + pulse * 2,
+      12,
+    );
+  } else {
     const frac = constrain((millis() - lastTime) / cd, 0, 1);
     noStroke();
-    fill(255, 0, 0, 150);
-    rect(pos.x, pos.y, sz.x * (1 - frac), sz.y, 5);
+    fill(0, 0, 0, 120);
+    rect(x + 6, y + 6, w - 12, h - 12, 10);
+
+    fill(255, 80, 80, 150);
+    rect(x + 6, y + 6, (w - 12) * frac, h - 12, 10);
   }
+
+  fill(idx === 1 ? 20 : 255);
+  textAlign(CENTER, CENTER);
+  textSize(min(16, w * 0.2));
+  text(label, x + w / 2, y + h * 0.38);
+
+  fill(idx === 1 ? 20 : 235);
+  textSize(11);
+  text(`Lv ${lvl}`, x + w / 2, y + h * 0.62);
+
+  pop();
+
+  drawCooldownText(x, y, w, h, ready, lastTime, cd);
 }
 
 // ─── GAME OVER ───────────────────────────────────────────────────────────────
 function drawGameOverScreen() {
   background(0);
 
+  const panelW = min(width * 0.72, 700);
+  const panelH = min(height * 0.56, 460);
+  const panelX = width / 2 - panelW / 2;
+  const panelY = height / 2 - panelH / 2;
+
+  drawCenteredPanel(panelX, panelY, panelW, panelH, 22);
+
   fill(255);
   textAlign(CENTER, CENTER);
+  textSize(min(54, width * 0.08));
+  text("Game Over", width / 2, panelY + 56);
 
-  textSize(sizeForWidth("Game Over", width * 0.6, 64));
-  text("Game Over", width / 2, height / 4);
+  fill(190);
+  textSize(min(18, width * 0.025));
+  text("Your run has ended", width / 2, panelY + 100);
 
-  textSize(sizeForWidth(`Enemies Killed: ${enemiesKilled}`, width / 4, 64));
-  text(
-    `Levels Gained: ${levelsGained}\nEnemies Killed: ${enemiesKilled}`,
-    width / 2,
-    height / 2 - 20
+  const statY = panelY + 158;
+  const statW = min(220, panelW * 0.34);
+  const statH = 86;
+  const statGap = 20;
+  const totalW = statW * 2 + statGap;
+  const startX = width / 2 - totalW / 2;
+
+  drawPanel(startX, statY, statW, statH, 16);
+  drawPanel(startX + statW + statGap, statY, statW, statH, 16);
+
+  fill(220);
+  textSize(min(16, width * 0.022));
+  text("Levels Gained", startX + statW / 2, statY + 24);
+  text("Enemies Killed", startX + statW + statGap + statW / 2, statY + 24);
+
+  fill(255);
+  textSize(min(30, width * 0.045));
+  text(levelsGained, startX + statW / 2, statY + 56);
+  text(enemiesKilled, startX + statW + statGap + statW / 2, statY + 56);
+
+  const btnW = min(240, panelW * 0.34);
+  const btnH = 62;
+  const btnGap = 18;
+  const btnY = panelY + panelH - 98;
+  const totalBtnW = btnW * 2 + btnGap;
+  const btnStartX = width / 2 - totalBtnW / 2;
+
+  const restartPos = createVector(btnStartX, btnY);
+  const menuPos = createVector(btnStartX + btnW + btnGap, btnY);
+  const btnSize = createVector(btnW, btnH);
+
+  drawFancyButton(
+    restartPos.x,
+    restartPos.y,
+    btnW,
+    btnH,
+    "Restart",
+    isMouseOver(restartPos, btnSize),
+    color(0, 200, 255),
   );
 
-  const bs = createVector(width / 4, height / 6);
-  const pRestart = createVector(width / 2 - bs.x - 20, height * 3 / 4);
-  const pMenu = createVector(width / 2 + 20, height * 3 / 4);
-
-  drawMenuButton(pRestart, bs, "Restart");
-  drawMenuButton(pMenu, bs, "Main Menu");
+  drawFancyButton(
+    menuPos.x,
+    menuPos.y,
+    btnW,
+    btnH,
+    "Main Menu",
+    isMouseOver(menuPos, btnSize),
+    color(180, 80, 255),
+  );
 
   if (touchJustReleased) {
-    if (isMouseOver(pRestart, bs)) {
+    if (isMouseOver(restartPos, btnSize)) {
       resetGame();
       gameState = GAME;
     }
-    if (isMouseOver(pMenu, bs)) {
+
+    if (isMouseOver(menuPos, btnSize)) {
       resetGame();
       gameState = STATE_START;
     }
@@ -462,22 +1006,159 @@ function drawGameOverScreen() {
 // ─── HELP ────────────────────────────────────────────────────────────────────
 function drawHelp() {
   background(0);
+
+  const panelW = min(width * 0.78, 760);
+  const panelH = min(height * 0.62, 520);
+  const panelX = width / 2 - panelW / 2;
+  const panelY = height / 2 - panelH / 2;
+
+  drawCenteredPanel(panelX, panelY, panelW, panelH, 22);
+
+  // clip area
+  push();
+  drawingContext.save();
+  drawingContext.beginPath();
+  drawingContext.rect(panelX + 16, panelY + 80, panelW - 32, panelH - 160);
+  drawingContext.clip();
+
+  let y = panelY + 100 + helpScroll;
+  const leftX = panelX + 40;
+  const textW = panelW - 80;
+
+  textAlign(LEFT, TOP);
+
   fill(255);
-  textAlign(CENTER, TOP);
-  textSize(sizeForWidth("Use WASD or arrow keys to move", 2 * width / 3, 64));
+  textSize(min(20, width * 0.028));
+  text("Controls", leftX, y);
+  y += 30;
 
-  const helpText = `Use WASD or arrow keys to move
-Auto-fire at nearest enemy
-Defeat enemies for XP to level up
-Level up to gain new powers
+  fill(200);
+  textSize(min(16, width * 0.022));
+  text("• Use WASD or the arrow keys to move", leftX, y, textW);
+  y += 28;
+  text("• Click/tap abilities on the right", leftX, y, textW);
+  y += 40;
 
-Click to return`;
+  fill(255);
+  textSize(min(20, width * 0.028));
+  text("Goal", leftX, y);
+  y += 30;
 
-  text(helpText, 0, height * 0.15, width * 0.9, height * 0.85);
+  fill(200);
+  textSize(min(16, width * 0.022));
+  text("• Auto-fire targets nearest enemy", leftX, y, textW);
+  y += 28;
+  text("• Gain XP and level up", leftX, y, textW);
+  y += 28;
+  text("• Choose upgrades to survive longer", leftX, y, textW);
+  y += 40;
 
-  if (touchJustReleased) {
-    gameState = STATE_START;
+  fill(255);
+  textSize(min(20, width * 0.028));
+  text("Enemies", leftX, y);
+  y += 30;
+
+  fill(200);
+  textSize(min(16, width * 0.022));
+  text("• Sprinters: fast, low health", leftX, y, textW);
+  y += 26;
+  text("• Tanks: slow, high health, shoot", leftX, y, textW);
+  y += 26;
+  text("• Splitters: spawn smaller enemies", leftX, y, textW);
+  y += 40;
+
+  fill(255);
+  textSize(min(20, width * 0.028));
+  text("Tips", leftX, y);
+  y += 30;
+
+  fill(200);
+  textSize(min(16, width * 0.022));
+  text("• Keep moving", leftX, y, textW);
+  y += 26;
+  text("• Save abilities for pressure moments", leftX, y, textW);
+  y += 26;
+  text("• Prioritise dangerous enemies", leftX, y, textW);
+
+  // calculate scroll bounds
+  const contentHeight = y - (panelY + 100);
+  const visibleHeight = panelH - 160;
+  helpMaxScroll = min(0, visibleHeight - contentHeight);
+
+  drawingContext.restore();
+  pop();
+
+  // title
+  fill(255);
+  textAlign(CENTER, CENTER);
+  textSize(min(48, width * 0.07));
+  text("How to Play", width / 2, panelY + 40);
+
+  // scrollbar (visual)
+  if (helpMaxScroll < 0) {
+    const barH = map(visibleHeight, 0, contentHeight, visibleHeight, 40);
+    const scrollRatio = -helpScroll / -helpMaxScroll;
+    const barY = panelY + 80 + scrollRatio * (visibleHeight - barH);
+
+    noStroke();
+    fill(255, 80);
+    rect(panelX + panelW - 10, barY, 4, barH, 4);
   }
+
+  // back button
+  const btnW = min(260, panelW * 0.5);
+  const btnH = 56;
+  const btnX = width / 2 - btnW / 2;
+  const btnY = panelY + panelH - 70;
+
+  const btnPos = createVector(btnX, btnY);
+  const btnSize = createVector(btnW, btnH);
+
+  drawFancyButton(
+    btnX,
+    btnY,
+    btnW,
+    btnH,
+    "Back",
+    isMouseOver(btnPos, btnSize),
+    color(0, 200, 255),
+  );
+
+  if (touchJustReleased && isMouseOver(btnPos, btnSize)) {
+    gameState = STATE_START;
+    helpScroll = 0;
+  }
+}
+
+function mouseWheel(event) {
+  if (gameState === STATE_HELP) {
+    helpScroll -= event.delta * 0.5;
+    helpScroll = constrain(helpScroll, helpMaxScroll, 0);
+  }
+}
+
+function touchStarted() {
+  if (gameState === STATE_HELP) {
+    isDraggingHelp = true;
+    lastTouchY = mouseY;
+  }
+}
+
+function touchMoved() {
+  if (gameState === STATE_HELP && isDraggingHelp) {
+    const dy = mouseY - lastTouchY;
+    helpScroll += dy;
+    helpScroll = constrain(helpScroll, helpMaxScroll, 0);
+    lastTouchY = mouseY;
+    return false;
+  }
+}
+
+function touchEnded() {
+  isDraggingHelp = false;
+  touchJustReleased = true;
+  handleButtonTap(mouseX, mouseY);
+  return false;
 }
 
 // ─── RESET ───────────────────────────────────────────────────────────────────
@@ -536,8 +1217,16 @@ function updatePlayerMovement() {
     player.position.add(move);
   }
 
-  player.position.x = constrain(player.position.x, player.halfSize, width - player.halfSize);
-  player.position.y = constrain(player.position.y, player.halfSize, height - player.halfSize);
+  player.position.x = constrain(
+    player.position.x,
+    player.halfSize,
+    width - player.halfSize,
+  );
+  player.position.y = constrain(
+    player.position.y,
+    player.halfSize,
+    height - player.halfSize,
+  );
 }
 
 function handleButtonTap(tx, ty) {
@@ -545,7 +1234,10 @@ function handleButtonTap(tx, ty) {
 
   const sz = createVector(width / 12, height / 12);
 
-  if (options2Lvl[0] > 0 && millis() - lastExplosionTime >= getExplosionCooldown()) {
+  if (
+    options2Lvl[0] > 0 &&
+    millis() - lastExplosionTime >= getExplosionCooldown()
+  ) {
     const pos = createVector(width - sz.x - 10, 10);
     if (pointInRect(tx, ty, pos, sz)) {
       enemies = [];
@@ -569,9 +1261,9 @@ function handleButtonTap(tx, ty) {
   if (options2Lvl[2] > 0 && millis() - lastMultiTime >= getMultiCooldown()) {
     const pos = createVector(width - sz.x - 10, sz.y * 2 + 30);
     if (pointInRect(tx, ty, pos, sz)) {
-      const shots = options2Lvl[2] * 8;
+      const shots = 6 + options2Lvl[2] * 4;
       for (let i = 0; i < shots; i++) {
-        const angle = i * TWO_PI / shots;
+        const angle = (i * TWO_PI) / shots;
         const dir = p5.Vector.fromAngle(angle);
         const target = p5.Vector.add(player.position, dir.mult(10));
         bullets.push(new Bullet(player.position.copy(), target));
@@ -594,7 +1286,10 @@ function handleButtonTap(tx, ty) {
 }
 
 function updateBullets() {
-  if (sniperActive && millis() - sniperStartTime > 5000) {
+  if (
+    sniperActive &&
+    millis() - sniperStartTime > 3500 + options2Lvl[1] * 1000
+  ) {
     sniperActive = false;
   }
 
@@ -637,16 +1332,16 @@ function handleEnemySpawning() {
 }
 
 function getEnemyWeights() {
-  const progress = player.level + enemiesKilled * 0.03;
+  const progress = player.level + enemiesKilled * 0.02;
 
-  let sprinter = 0.15 + progress * 0.015;
-  let tank = 0.08 + progress * 0.008;
-  let splitter = 0.03 + progress * 0.006;
+  let sprinter = 0.08 + progress * 0.01;
+  let tank = 0.04 + progress * 0.006;
+  let splitter = 0.02 + progress * 0.005;
   let normal = 1.0;
 
-  sprinter = min(sprinter, 0.35);
-  tank = min(tank, 0.22);
-  splitter = min(splitter, 0.16);
+  sprinter = min(sprinter, 0.28);
+  tank = min(tank, 0.18);
+  splitter = min(splitter, 0.14);
 
   return { normal, sprinter, tank, splitter };
 }
@@ -682,7 +1377,8 @@ function spawnEnemy() {
   }
 
   const type = weightedEnemyType();
-  enemies.push(new Enemy(createVector(x, y), type));
+  const enemy = new Enemy(createVector(x, y), type);
+  enemies.push(enemy);
 }
 
 function getNearestEnemy() {
@@ -725,35 +1421,54 @@ function damagePlayer(amount) {
 }
 
 function updateEnemies() {
-  if (empActive && millis() - empStartTime > 5000) {
+  if (empActive && millis() - empStartTime > 2500 + options2Lvl[3] * 800) {
     empActive = false;
   }
 
   for (let i = enemies.length - 1; i >= 0; i--) {
     const enemy = enemies[i];
 
-    if (p5.Vector.dist(enemy.pos, player.position) < enemy.size * 0.5 + player.halfSize) {
-      damagePlayer(enemy.contactDamage);
+    if (!enemy || !enemy.pos) {
       enemies.splice(i, 1);
       continue;
     }
 
-    if (!empActive) {
+    const enemySize = enemy.size || 30;
+    const enemyContactDamage = enemy.contactDamage || 1;
+
+    if (
+      p5.Vector.dist(enemy.pos, player.position) <
+      enemySize * 0.5 + player.halfSize
+    ) {
+      damagePlayer(enemyContactDamage);
+      enemies.splice(i, 1);
+      continue;
+    }
+
+    if (!empActive && typeof enemy.move === "function") {
       enemy.move(player.position);
     }
 
-    enemy.update();
-    enemy.display();
+    if (typeof enemy.update === "function") {
+      enemy.update();
+    }
+
+    if (typeof enemy.display === "function") {
+      enemy.display();
+    }
 
     if (
       (enemy.type === "tank" || enemy.type === "splitter") &&
+      typeof enemy.lastShotTime === "number" &&
       millis() - enemy.lastShotTime >= 2000
     ) {
-      enemyBullets.push(new Bullet(enemy.pos.copy(), player.position.copy(), true));
+      enemyBullets.push(
+        new Bullet(enemy.pos.copy(), player.position.copy(), true),
+      );
       enemy.lastShotTime = millis();
     }
 
-    if (enemy.isDead()) {
+    if (typeof enemy.isDead === "function" && enemy.isDead()) {
       handleEnemyDeath(enemy, i);
     }
   }
@@ -761,16 +1476,15 @@ function updateEnemies() {
 
 function handleEnemyDeath(enemy, index) {
   enemiesKilled++;
-  player.xp += enemy.xpValue;
+  player.xp += enemy.xpValue || 0;
 
   if (enemy.type === "splitter") {
-    let splitterCount = 0;
+    let sprinterCount = 0;
     for (const e of enemies) {
-      if (e.type === "sprinter") splitterCount++;
+      if (e && e.type === "sprinter") sprinterCount++;
     }
-
-    const extra = min(floor(1000 / spawnInterval), 5);
-    const spawnCount = min(3 + extra, max(0, 18 - splitterCount));
+    const extra = min(floor(900 / spawnInterval), 2);
+    const spawnCount = min(2 + extra, max(0, 12 - sprinterCount));
 
     for (let k = 0; k < spawnCount; k++) {
       const off = p5.Vector.random2D().mult(20);
@@ -785,11 +1499,19 @@ function handleEnemyDeath(enemy, index) {
     player.xp -= player.xpToNextLevel;
     player.level++;
     levelsGained++;
-    player.xpToNextLevel = 10 * player.level;
+
+    player.maxHealth += 1;
+    player.health = min(
+      player.maxHealth,
+      player.health + ceil(player.maxHealth * 0.5),
+    );
+
+    player.xpToNextLevel = floor(8 + Math.pow(player.level, 1.35) * 6);
     leveled = true;
   }
 
   if (leveled) {
+    chooseOptions();
     gameState = MENU;
   }
 }
@@ -800,7 +1522,10 @@ function updateEnemyBullets() {
     bullet.move();
     bullet.display();
 
-    if (p5.Vector.dist(bullet.pos, player.position) < bullet.r + player.halfSize) {
+    if (
+      p5.Vector.dist(bullet.pos, player.position) <
+      bullet.r + player.halfSize
+    ) {
       damagePlayer(1);
       enemyBullets.splice(i, 1);
     } else if (bullet.offScreen()) {
@@ -828,11 +1553,15 @@ function chooseOptions() {
   chosenOption2 = floor(random(options2.length));
 
   if (options1.length > 1 && chosenOption1 === lastChosen1) {
-    chosenOption1 = (chosenOption1 + 1 + floor(random(options1.length - 1))) % options1.length;
+    chosenOption1 =
+      (chosenOption1 + 1 + floor(random(options1.length - 1))) %
+      options1.length;
   }
 
   if (options2.length > 1 && chosenOption2 === lastChosen2) {
-    chosenOption2 = (chosenOption2 + 1 + floor(random(options2.length - 1))) % options2.length;
+    chosenOption2 =
+      (chosenOption2 + 1 + floor(random(options2.length - 1))) %
+      options2.length;
   }
 }
 
@@ -843,9 +1572,9 @@ function applyUpgrade(idx) {
     player.maxSpeed += 0.25;
   } else if (opt === "Fire speed") {
     const lvl = options1Lvl[idx];
-    shootDelay = max(90, floor(1000 * Math.pow(0.9, lvl)));
+    shootDelay = max(140, floor(1000 * Math.pow(0.92, lvl)));
   } else if (opt === "Damage") {
-    bulletDamage += 0.1;
+    bulletDamage += 0.2;
   } else if (opt === "Health") {
     player.maxHealth += 2;
     player.health = player.maxHealth;
@@ -857,204 +1586,17 @@ function applyUpgrade(idx) {
 }
 
 function getExplosionCooldown() {
-  return max(0, 30000 - options2Lvl[0] * 250);
+  return max(12000, 24000 - options2Lvl[0] * 1800);
 }
 
 function getSniperCooldown() {
-  return max(0, 30000 - options2Lvl[1] * 250);
+  return max(10000, 22000 - options2Lvl[1] * 1600);
 }
 
 function getMultiCooldown() {
-  return max(0, 5000 - options2Lvl[2] * 100);
+  return max(2200, 6000 - options2Lvl[2] * 350);
 }
 
 function getEMPCooldown() {
-  return max(0, 20000 - options2Lvl[3] * 200);
-}
-
-// ─── CLASSES ─────────────────────────────────────────────────────────────────
-class Bullet {
-  constructor(start, target, isEnemy = false) {
-    this.pos = start.copy();
-    this.vel = p5.Vector.sub(target, start).normalize().mult(isEnemy ? 6 : 10);
-    this.r = isEnemy ? 6 : 5;
-    this.isEnemy = isEnemy;
-  }
-
-  move() {
-    this.pos.add(this.vel);
-  }
-
-  display() {
-    noStroke();
-    if (this.isEnemy) {
-      fill(255, 60, 60);
-      ellipse(this.pos.x, this.pos.y, this.r * 2.4);
-      fill(255, 180, 180);
-      ellipse(this.pos.x, this.pos.y, this.r * 1.2);
-    } else {
-      fill(255, 150, 0);
-      ellipse(this.pos.x, this.pos.y, this.r * 2.4);
-      fill(255, 240, 180);
-      ellipse(this.pos.x, this.pos.y, this.r * 1.1);
-    }
-  }
-
-  hits(enemy) {
-    return p5.Vector.dist(this.pos, enemy.pos) < this.r + enemy.size * 0.5;
-  }
-
-  offScreen() {
-    return (
-      this.pos.x < -20 ||
-      this.pos.x > width + 20 ||
-      this.pos.y < -20 ||
-      this.pos.y > height + 20
-    );
-  }
-}
-
-class Enemy {
-  constructor(start, type) {
-    this.pos = start.copy();
-    this.type = type;
-    this.spawnTime = millis();
-    this.hitFlash = 0;
-
-    switch (type) {
-      case "sprinter":
-        this.speed = 7;
-        this.health = 1;
-        this.contactDamage = 1;
-        this.size = 24;
-        break;
-      case "tank":
-        this.speed = 0.5;
-        this.health = 5;
-        this.contactDamage = 2;
-        this.size = 38;
-        break;
-      case "splitter":
-        this.speed = 0.2;
-        this.health = 3;
-        this.contactDamage = 1;
-        this.size = 34;
-        break;
-      default:
-        this.speed = 2;
-        this.health = 2;
-        this.contactDamage = 1;
-        this.size = 30;
-        break;
-    }
-
-    this.startingHealth = this.health;
-    this.xpValue = this.startingHealth;
-    this.lastShotTime = millis();
-  }
-
-  update() {
-    if (this.hitFlash > 0) this.hitFlash--;
-  }
-
-  move(target) {
-    const dir = p5.Vector.sub(target, this.pos);
-    if (dir.mag() > 1) {
-      dir.setMag(this.speed);
-      this.pos.add(dir);
-    }
-  }
-
-  display() {
-    noStroke();
-
-    let c;
-    switch (this.type) {
-      case "sprinter":
-        c = color(255, 0, 0);
-        break;
-      case "tank":
-        c = color(0, 0, 255);
-        break;
-      case "splitter":
-        c = color(255, 255, 0);
-        break;
-      default:
-        c = color(0, 255, 255);
-    }
-
-    const age = millis() - this.spawnTime;
-    const appear = constrain(age / 180, 0, 1);
-    const drawSize = this.size * lerp(0.45, 1, appear);
-
-    if (this.hitFlash > 0) {
-      fill(255);
-    } else {
-      fill(c);
-    }
-
-    ellipse(this.pos.x, this.pos.y, drawSize);
-
-    if (appear < 1) {
-      noFill();
-      stroke(red(c), green(c), blue(c), 180 * (1 - appear));
-      strokeWeight(2);
-      ellipse(this.pos.x, this.pos.y, this.size + (1 - appear) * 16);
-    }
-  }
-
-  isDead() {
-    return this.health <= 0;
-  }
-}
-
-class Player {
-  constructor(position, size, maxHealth, maxSpeed) {
-    this.position = position.copy();
-    this.size = size;
-    this.halfSize = size / 2;
-
-    this.maxHealth = maxHealth;
-    this.health = maxHealth;
-    this.maxSpeed = maxSpeed;
-
-    this.xp = 0;
-    this.level = 1;
-    this.xpToNextLevel = 10;
-
-    this.shieldMax = 0;
-    this.shieldCurrent = 0;
-    this.shieldRegenDelay = 10000;
-    this.shieldRegenTimer = 0;
-    this.shieldOnCooldown = false;
-
-    this.contactDamage = 1;
-    this.invulnerableUntil = 0;
-    this.flashTimer = 0;
-  }
-
-  updateDamageFlash() {
-    if (this.flashTimer > 0) this.flashTimer--;
-  }
-
-  display() {
-    noStroke();
-
-    if (millis() < this.invulnerableUntil && frameCount % 6 < 3) {
-      fill(255, 120, 120);
-    } else if (this.flashTimer > 0) {
-      fill(255, 180, 180);
-    } else {
-      fill(255);
-    }
-
-    ellipse(this.position.x, this.position.y, this.size);
-
-    if (this.flashTimer > 0) {
-      noFill();
-      stroke(255, 100, 100, 180);
-      strokeWeight(2);
-      ellipse(this.position.x, this.position.y, this.size + this.flashTimer * 2.2);
-    }
-  }
+  return max(9000, 18000 - options2Lvl[3] * 1200);
 }
