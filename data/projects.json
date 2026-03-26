@@ -131,5 +131,32 @@
     "High score is tracked during play",
     "The target RGB values are only shown after the round ends"
   ]
+},
+{
+  "slug": "zenith",
+  "title": "Zenith",
+  "description": "A fast-paced auto-shooter where you upgrade and survive waves of enemies.",
+  "longDescription": "Zenith is a survival-style shooter where you automatically fire at enemies while moving around the screen. Defeat enemies, level up, and choose upgrades. As the game progresses, enemies spawn faster and become more dangerous.",
+  "path": "./projects/zenith/index.html",
+  "thumbnail": "images/thumbnails/zenith.png",
+  "tags": [
+    "game",
+    "action",
+    "interactive"
+  ],
+  "featured": true,
+  "status": "prototype",
+  "order": 6,
+  "controls": [
+    "Use WASD or arrow keys to move",
+    "Tap or click ability buttons to activate them",
+    "Choose upgrades when you level up",
+    "Avoid enemies and survive as long as possible"
+  ],
+  "notes": [
+    "The player automatically targets the nearest enemy",
+    "Enemies scale over time with faster spawning",
+    "Different upgrades change playstyle significantly"
+  ]
 }
 ]

@@ -1,0 +1,49 @@
+.project-stage {
+  position: relative;
+  background: #000;
+  overflow: hidden;
+}
+
+.canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: clamp(420px, 72vh, 820px);
+  background: #000;
+}
+
+#canvas {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+#canvas canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+  background: #000;
+}
+
+.canvas-overlay {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  pointer-events: none;
+  z-index: 3;
+}
+
+.overlay-pill {
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(15, 15, 20, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  color: #f3f3f7;
+  font-size: 0.9rem;
+  backdrop-filter: blur(4px);
+}
+
+@media (max-width: 900px) {
+  .canvas-wrap {
+    height: clamp(340px, 62vh, 640px);
+  }
+}
