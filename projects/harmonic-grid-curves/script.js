@@ -2,7 +2,7 @@
   const TAU = Math.PI * 2;
 
   const state = {
-    n: 6,
+    n: 4,
     pause: false,
 
     curves: [],
@@ -12,7 +12,7 @@
     drawRadius: 0,
 
     travelDist: 0,
-    drawSpeed: 6,
+    drawSpeed: 40,
 
     mode: 0, // 0 draw, 1 pause, 2 fade
     pauseCounter: 0,
@@ -30,7 +30,7 @@
 
     guideAlpha: 0.08,
 
-    controls: {}
+    controls: {},
   };
 
   function clamp(value, min, max) {
@@ -57,12 +57,12 @@
     else if (h < 180) [r, g, b] = [0, c, x];
     else if (h < 240) [r, g, b] = [0, x, c];
     else if (h < 300) [r, g, b] = [x, 0, c];
-    else[r, g, b] = [c, 0, x];
+    else [r, g, b] = [c, 0, x];
 
     return [
       Math.floor((r + m) * 255),
       Math.floor((g + m) * 255),
-      Math.floor((b + m) * 255)
+      Math.floor((b + m) * 255),
     ];
   }
 
@@ -122,7 +122,7 @@
       segLengths,
       cumLengths,
       totalLength,
-      count
+      count,
     };
   }
 
@@ -134,10 +134,10 @@
     const margin = Math.min(app.width, app.height) * 0.08;
     state.drawRadius = Math.max(
       40,
-      Math.min(app.width, app.height) * 0.5 - margin
+      Math.min(app.width, app.height) * 0.5 - margin,
     );
 
-    const angleStep = 0.01;
+    const angleStep = state.n >= 12 ? 0.05 : 0.015;
     const xHistory = [];
     const yHistory = [];
 
@@ -158,13 +158,13 @@
       const rowCurves = [];
 
       for (let col = 0; col < state.n - 1; col++) {
-        const points = [];
+        const points = new Array(xHistory.length);
 
         for (let step = 0; step < xHistory.length; step++) {
-          points.push({
+          points[step] = {
             x: xHistory[step][col],
-            y: yHistory[step][row]
-          });
+            y: yHistory[step][row],
+          };
         }
 
         rowCurves.push(buildCurveData(points));
@@ -201,7 +201,7 @@
 
     return {
       x: lerp(curve.points[i].x, curve.points[i + 1].x, t),
-      y: lerp(curve.points[i].y, curve.points[i + 1].y, t)
+      y: lerp(curve.points[i].y, curve.points[i + 1].y, t),
     };
   }
 
@@ -329,7 +329,9 @@
 
   function drawPauseButton(ctx, app) {
     const overlayTitle = document.getElementById("overlay-title");
-    const titleWidth = overlayTitle ? overlayTitle.getBoundingClientRect().width : 110;
+    const titleWidth = overlayTitle
+      ? overlayTitle.getBoundingClientRect().width
+      : 110;
 
     const w = 88;
     const h = 32;
@@ -356,7 +358,9 @@
 
   function isInsidePauseButton(app) {
     const overlayTitle = document.getElementById("overlay-title");
-    const titleWidth = overlayTitle ? overlayTitle.getBoundingClientRect().width : 110;
+    const titleWidth = overlayTitle
+      ? overlayTitle.getBoundingClientRect().width
+      : 110;
 
     const w = 88;
     const h = 38;
@@ -388,7 +392,7 @@
       el,
       set(valueId, value) {
         setValueText(valueId, formatter(value));
-      }
+      },
     };
   }
 
@@ -424,7 +428,7 @@
 
     if (state.controls.grid) {
       state.controls.grid.addEventListener("input", () => {
-        const next = clamp(Number(state.controls.grid.value) || 6, 2, 25);
+        const next = clamp(Number(state.controls.grid.value) || 4, 2, 25);
         state.n = next;
         setValueText("grid-value", next);
         rebuildCurves(app);
@@ -548,7 +552,7 @@
         app.height,
         state.travelDist,
         alpha,
-        color
+        color,
       );
 
       drawTipAndDot(
@@ -558,7 +562,7 @@
         app.height,
         state.travelDist,
         alpha,
-        rgb
+        rgb,
       );
 
       drawPauseButton(ctx, app);
@@ -580,5 +584,6 @@
         ctx.save();
         ctx.restore();
       }
-    }});
+    },
+  });
 })();

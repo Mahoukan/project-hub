@@ -15,9 +15,20 @@ let maxSpeed;
 let sizeArr;
 let tierArr;
 
+function getLogicalWidth(app) {
+  return app.canvas.getBoundingClientRect().width;
+}
+
+function getLogicalHeight(app) {
+  return app.canvas.getBoundingClientRect().height;
+}
+
 function createParticles(app) {
+  const w = getLogicalWidth(app);
+  const h = getLogicalHeight(app);
+
   COUNT = Math.min(
-    Math.floor(app.width * app.height * PARTICLE_DENSITY),
+    Math.floor(w * h * PARTICLE_DENSITY),
     MAX_PARTICLES,
   );
 
@@ -32,8 +43,8 @@ function createParticles(app) {
   tierArr = new Uint8Array(COUNT);
 
   for (let i = 0; i < COUNT; i++) {
-    posX[i] = Math.random() * app.width;
-    posY[i] = -Math.random() * app.height;
+    posX[i] = Math.random() * w;
+    posY[i] = -Math.random() * h;
     resetParticle(i);
   }
 }
@@ -64,8 +75,11 @@ function resetParticle(i) {
 }
 
 function respawnParticle(i, app) {
-  posX[i] = Math.random() * app.width;
-  posY[i] = -Math.random() * Math.max(50, app.height * 0.05);
+  const w = getLogicalWidth(app);
+  const h = getLogicalHeight(app);
+
+  posX[i] = Math.random() * w;
+  posY[i] = -Math.random() * Math.max(50, h * 0.05);
   resetParticle(i);
 }
 
@@ -92,6 +106,7 @@ bootProject({
   setup(app) {
     createParticles(app);
   },
+
   onResize(app) {
     createParticles(app);
   },
@@ -107,6 +122,8 @@ bootProject({
   },
 
   update(app) {
+    const w = getLogicalWidth(app);
+    const h = getLogicalHeight(app);
     const oddFrame = app.frame & 1;
 
     for (let i = 0; i < COUNT; i++) {
@@ -119,10 +136,10 @@ bootProject({
 
         velX[i] *= 0.985;
 
-        if (posX[i] < 0) posX[i] += app.width;
-        else if (posX[i] > app.width) posX[i] -= app.width;
+        if (posX[i] < 0) posX[i] += w;
+        else if (posX[i] > w) posX[i] -= w;
 
-        if (posY[i] > app.height) {
+        if (posY[i] > h) {
           respawnParticle(i, app);
         }
       }
@@ -131,9 +148,11 @@ bootProject({
 
   draw(app) {
     const ctx = app.ctx;
+    const w = getLogicalWidth(app);
+    const h = getLogicalHeight(app);
 
     ctx.fillStyle = "#000";
-    ctx.fillRect(0, 0, app.width, app.height);
+    ctx.fillRect(0, 0, w, h);
 
     ctx.fillStyle = "#fff";
 
