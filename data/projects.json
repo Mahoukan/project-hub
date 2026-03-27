@@ -6,10 +6,7 @@
     "longDescription": "This is a relaxing snowfall scene where snowflakes drift down the screen at different speeds and sizes. You can interact with it by clicking or dragging to push the snow around and create little bursts. It is designed to feel smooth and responsive on any screen size.",
     "path": "./projects/snow-particles/index.html",
     "thumbnail": "images/thumbnails/snow.png",
-    "tags": [
-      "visual",
-      "interactive"
-    ],
+    "tags": ["visual", "interactive", "Phone-optimised"],
     "featured": true,
     "status": "prototype",
     "order": 1,
@@ -20,7 +17,8 @@
     ],
     "notes": [
       "Different snowflakes fall at different speeds to make it feel more natural",
-      "Designed to stay smooth even with lots of particles on screen"
+      "Designed to stay smooth even with lots of particles on screen",
+      "Must have desktop display scaling set to 100% otherwise game will break"
     ]
   },
   {
@@ -30,11 +28,7 @@
     "longDescription": "This project lets you explore rose curves, which are patterns created using maths. You can switch between different shapes, adjust how they are drawn, and watch them animate smoothly. It is part visual tool and part experiment.",
     "path": "./projects/rose-curves-advanced/index.html",
     "thumbnail": "images/thumbnails/rose.png",
-    "tags": [
-      "maths",
-      "visual",
-      "interactive"
-    ],
+    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
     "featured": true,
     "status": "experimental",
     "order": 2,
@@ -46,7 +40,8 @@
     ],
     "notes": [
       "Each curve is drawn smoothly to keep the animation clean",
-      "You can tweak the settings to create your own variations"
+      "You can tweak the settings to create your own variations",
+      "Must have desktop display scaling set to 100% otherwise game will break"
     ]
   },
   {
@@ -56,11 +51,7 @@
     "longDescription": "This project draws a rotating set of points around a circle and connects every point to every other point, creating changing geometric patterns. You can adjust the number of points, change the rotation speed, toggle trails, and fill the polygon for different visual effects.",
     "path": "./projects/polygon-network/index.html",
     "thumbnail": "images/thumbnails/polygon_network.png",
-    "tags": [
-      "maths",
-      "visual",
-      "interactive"
-    ],
+    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
     "featured": true,
     "status": "experimental",
     "order": 3,
@@ -77,85 +68,76 @@
     ],
     "notes": [
       "Different point counts create very different geometric patterns",
-      "Trail mode lets the motion build up into more complex visuals"
+      "Trail mode lets the motion build up into more complex visuals",
+      "Must have desktop display scaling set to 100% otherwise game will break"
     ]
   },
   {
-  "slug": "harmonic-grid-curves",
-  "title": "Lissajous Curves",
-  "description": "Lissajous curves drawn one at a time with changing ratios.",
-  "longDescription": "Each curve comes from pairing two motion ratios and drawing the result progressively. After finishing, it pauses briefly, fades out, and moves to the next ratio. The curve stays centred and fills most of the screen, with a faint guide to help track the motion.",
-  "path": "./projects/harmonic-grid-curves/index.html",
-  "thumbnail": "images/thumbnails/harmonic_grid_curves.png",
-  "tags": [
-    "maths",
-    "visual",
-    "interactive"
-  ],
-  "featured": true,
-  "status": "experimental",
-  "order": 4,
-  "controls": [
-    "Use the settings menu to change the grid size (ratio set)",
-    "Adjust speed, pause time, fade, tip length, and guide opacity",
-    "Click Pause on the canvas to stop or resume"
-  ],
-  "notes": [
-    "Each curve is labelled by its ratio"
-  ]
-},
-{
-  "slug": "rgb-colour-match",
-  "title": "RGB Colour Match",
-  "description": "Try to match the target colour before the timer runs out.",
-  "longDescription": "Use the red, green, and blue sliders to match the target colour as closely as you can. When the round ends, your score is based on how close your colour was. You can change the difficulty, submit early, and try to beat your high score.",
-  "path": "./projects/rgb-colour-match/index.html",
-  "thumbnail": "images/thumbnails/rgb_colour_match.png",
-  "tags": [
-    "interactive",
-    "game",
-    "colour"
-  ],
-  "featured": true,
-  "status": "prototype",
-  "order": 5,
-  "controls": [
-    "Use the RGB sliders to match the target colour",
-    "Click Done to submit before time runs out",
-    "Click Reset to start a new round",
-    "Change the difficulty to adjust the timer",
-    "Press H to show or hide the help text"
-  ],
-  "notes": [
-    "Score is based on how close your RGB values are to the target",
-    "High score is tracked during play",
-    "The target RGB values are only shown after the round ends"
-  ]
-},
-{
-  "slug": "zenith",
-  "title": "Zenith",
-  "description": "A survival shooter where you dodge enemies, level up, and build your run through upgrades.",
-  "longDescription": "Zenith is a top-down survival game where you move, survive, and slowly turn your build into something stronger. You auto-fire at enemies while trying to stay alive long enough to level up and choose new upgrades. As more enemy types appear and the pace increases, runs become more chaotic and build choices start to matter more.",
-  "path": "./projects/zenith/index.html",
-  "thumbnail": "images/thumbnails/zenith.png",
-  "tags": [
-    "game",
-    "survival",
-    "arcade"
-  ],
-  "featured": true,
-  "status": "in development",
-  "order": 6,
-  "controls": [
-    "Move with WASD or arrow keys",
-    "Auto-fire targets the nearest enemy",
-    "Use abilities when available",
-    "Pick upgrades on level up"
-  ],
-  "notes": [
-    "Focused on movement, survival, and upgrade choices",
-    "Still being balanced and polished"
-  ]
-}
+    "slug": "harmonic-grid-curves",
+    "title": "Lissajous Curves",
+    "description": "Lissajous curves drawn one at a time with changing ratios.",
+    "longDescription": "Each curve comes from pairing two motion ratios and drawing the result progressively. After finishing, it pauses briefly, fades out, and moves to the next ratio. The curve stays centred and fills most of the screen, with a faint guide to help track the motion.",
+    "path": "./projects/harmonic-grid-curves/index.html",
+    "thumbnail": "images/thumbnails/harmonic_grid_curves.png",
+    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
+    "featured": true,
+    "status": "experimental",
+    "order": 4,
+    "controls": [
+      "Use the settings menu to change the grid size (ratio set)",
+      "Adjust speed, pause time, fade, tip length, and guide opacity",
+      "Click Pause on the canvas to stop or resume"
+    ],
+    "notes": [
+      "Each curve is labelled by its ratio",
+      "Must have desktop display scaling set to 100% otherwise game will break"
+    ]
+  },
+  {
+    "slug": "rgb-colour-match",
+    "title": "RGB Colour Match",
+    "description": "Try to match the target colour before the timer runs out.",
+    "longDescription": "Use the red, green, and blue sliders to match the target colour as closely as you can. When the round ends, your score is based on how close your colour was. You can change the difficulty, submit early, and try to beat your high score.",
+    "path": "./projects/rgb-colour-match/index.html",
+    "thumbnail": "images/thumbnails/rgb_colour_match.png",
+    "tags": ["interactive", "game", "colour", "Multi-device optimised"],
+    "featured": true,
+    "status": "prototype",
+    "order": 5,
+    "controls": [
+      "Use the RGB sliders to match the target colour",
+      "Click Done to submit before time runs out",
+      "Click Reset to start a new round",
+      "Change the difficulty to adjust the timer",
+      "Press H to show or hide the help text"
+    ],
+    "notes": [
+      "Score is based on how close your RGB values are to the target",
+      "High score is tracked during play",
+      "The target RGB values are only shown after the round ends"
+    ]
+  },
+  {
+    "slug": "zenith",
+    "title": "Zenith",
+    "description": "A survival shooter where you dodge enemies, level up, and build your run through upgrades.",
+    "longDescription": "Zenith is a top-down survival game where you move, survive, and slowly turn your build into something stronger. You auto-fire at enemies while trying to stay alive long enough to level up and choose new upgrades. As more enemy types appear and the pace increases, runs become more chaotic and build choices start to matter more.",
+    "path": "./projects/zenith/index.html",
+    "thumbnail": "images/thumbnails/zenith.png",
+    "tags": ["game", "survival", "arcade", "Website optimised"],
+    "featured": true,
+    "status": "in development",
+    "order": 6,
+    "controls": [
+      "Move with WASD or arrow keys",
+      "Auto-fire targets the nearest enemy",
+      "Use abilities when available",
+      "Pick upgrades on level up"
+    ],
+    "notes": [
+      "Focused on movement, survival, and upgrade choices",
+      "Must have desktop display scaling set to 100% otherwise game will break",
+      "Still being balanced and polished"
+    ]
+  }
 ]
