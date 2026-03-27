@@ -1,6 +1,6 @@
 let COUNT = 0;
-const PARTICLE_DENSITY = 0.02;
-const MAX_PARTICLES = 60000;
+const PARTICLE_DENSITY = 0.001;
+const MAX_PARTICLES = 3000;
 
 let posX;
 let posY;
