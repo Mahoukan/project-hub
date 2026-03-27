@@ -1,30 +1,40 @@
 (() => {
   const TAU = Math.PI * 2;
 
+  const PAUSE_BTN = {
+    x: 10,
+    y: 10,
+    w: 88,
+    h: 32,
+    r: 10,
+  };
+
   const state = {
     n: 4,
     pause: false,
 
-    curves: [],
+    xHistory: [],
+    yHistory: [],
+    currentCurve: null,
     currentRow: 0,
     currentCol: 0,
 
     drawRadius: 0,
 
     travelDist: 0,
-    drawSpeed: 40,
+    drawSpeed: 50,
 
     mode: 0, // 0 draw, 1 pause, 2 fade
     pauseCounter: 0,
-    pauseFrames: 45,
+    pauseFrames: 25,
 
     fadeCounter: 0,
-    fadeFrames: 35,
+    fadeFrames: 15,
 
     colorTime: 0,
     colorSpeed: 0.0025,
 
-    tipLength: 24,
+    tipLength: 10,
     tipWeight: 4,
     dotSize: 6,
 
@@ -32,6 +42,8 @@
 
     controls: {},
   };
+
+  let resizeTimer = null;
 
   function clamp(value, min, max) {
     return Math.max(min, Math.min(max, value));
@@ -84,21 +96,6 @@
     state.mode = 0;
   }
 
-  function nextCurve() {
-    state.currentCol++;
-
-    if (state.currentCol >= state.n - 1) {
-      state.currentCol = 0;
-      state.currentRow++;
-    }
-
-    if (state.currentRow >= state.n - 1) {
-      state.currentRow = 0;
-    }
-
-    resetAnimation();
-  }
-
   function buildCurveData(points) {
     const count = points.length;
     const segLengths = new Float32Array(Math.max(0, count - 1));
@@ -126,58 +123,75 @@
     };
   }
 
-  function rebuildCurves(app) {
-    state.curves = [];
-    state.currentRow = 0;
-    state.currentCol = 0;
-
+  function buildHistory(app) {
     const margin = Math.min(app.width, app.height) * 0.08;
     state.drawRadius = Math.max(
       40,
       Math.min(app.width, app.height) * 0.5 - margin,
     );
 
-    const angleStep = state.n >= 12 ? 0.05 : 0.015;
-    const xHistory = [];
-    const yHistory = [];
+    const angleStep = state.n >= 16 ? 0.03 : state.n >= 10 ? 0.02 : 0.0125;
+
+    state.xHistory = [];
+    state.yHistory = [];
 
     for (let angle = 0; angle <= TAU + 0.0001; angle += angleStep) {
-      const xPos = [];
-      const yPos = [];
+      const xPos = new Float32Array(state.n - 1);
+      const yPos = new Float32Array(state.n - 1);
 
       for (let i = 1; i < state.n; i++) {
-        xPos.push(state.drawRadius * Math.cos(angle * i));
-        yPos.push(state.drawRadius * Math.sin(angle * i));
+        xPos[i - 1] = state.drawRadius * Math.cos(angle * i);
+        yPos[i - 1] = state.drawRadius * Math.sin(angle * i);
       }
 
-      xHistory.push(xPos);
-      yHistory.push(yPos);
+      state.xHistory.push(xPos);
+      state.yHistory.push(yPos);
+    }
+  }
+
+  function buildCurrentCurve() {
+    const row = state.currentRow;
+    const col = state.currentCol;
+    const stepCount = state.xHistory.length;
+    const points = new Array(stepCount);
+
+    for (let step = 0; step < stepCount; step++) {
+      points[step] = {
+        x: state.xHistory[step][col],
+        y: state.yHistory[step][row],
+      };
     }
 
-    for (let row = 0; row < state.n - 1; row++) {
-      const rowCurves = [];
+    state.currentCurve = buildCurveData(points);
+  }
 
-      for (let col = 0; col < state.n - 1; col++) {
-        const points = new Array(xHistory.length);
+  function rebuildCurves(app) {
+    state.currentRow = 0;
+    state.currentCol = 0;
 
-        for (let step = 0; step < xHistory.length; step++) {
-          points[step] = {
-            x: xHistory[step][col],
-            y: yHistory[step][row],
-          };
-        }
-
-        rowCurves.push(buildCurveData(points));
-      }
-
-      state.curves.push(rowCurves);
-    }
-
+    buildHistory(app);
+    buildCurrentCurve();
     resetAnimation();
   }
 
   function getCurrentCurve() {
-    return state.curves[state.currentRow]?.[state.currentCol] || null;
+    return state.currentCurve || null;
+  }
+
+  function nextCurve() {
+    state.currentCol++;
+
+    if (state.currentCol >= state.n - 1) {
+      state.currentCol = 0;
+      state.currentRow++;
+    }
+
+    if (state.currentRow >= state.n - 1) {
+      state.currentRow = 0;
+    }
+
+    buildCurrentCurve();
+    resetAnimation();
   }
 
   function getPointAtDistance(curve, dist) {
@@ -185,11 +199,16 @@
     if (dist <= 0) return curve.points[0];
     if (dist >= curve.totalLength) return curve.points[curve.count - 1];
 
-    let i = 0;
-    while (i < curve.count - 1 && curve.cumLengths[i + 1] < dist) {
-      i++;
+    let lo = 0;
+    let hi = curve.count - 1;
+
+    while (lo < hi) {
+      const mid = (lo + hi) >> 1;
+      if (curve.cumLengths[mid] < dist) lo = mid + 1;
+      else hi = mid;
     }
 
+    const i = Math.max(0, lo - 1);
     if (i >= curve.count - 1) {
       return curve.points[curve.count - 1];
     }
@@ -327,22 +346,14 @@
     ctx.restore();
   }
 
-  function drawPauseButton(ctx, app) {
-    const overlayTitle = document.getElementById("overlay-title");
-    const titleWidth = overlayTitle
-      ? overlayTitle.getBoundingClientRect().width
-      : 110;
-
-    const w = 88;
-    const h = 32;
-    const x = 10;
-    const y = 10;
+  function drawPauseButton(ctx) {
+    const { x, y, w, h, r } = PAUSE_BTN;
 
     ctx.save();
     ctx.fillStyle = "rgba(0,0,0,0.45)";
     ctx.strokeStyle = "rgba(255,255,255,0.25)";
     ctx.lineWidth = 1.2;
-    roundRect(ctx, x, y, w, h, 10);
+    roundRect(ctx, x, y, w, h, r);
     ctx.fill();
     ctx.stroke();
 
@@ -352,20 +363,10 @@
     ctx.textBaseline = "middle";
     ctx.fillText(state.pause ? "Resume" : "Pause", x + w * 0.5, y + h * 0.5);
     ctx.restore();
-
-    return { x, y, w, h };
   }
 
   function isInsidePauseButton(app) {
-    const overlayTitle = document.getElementById("overlay-title");
-    const titleWidth = overlayTitle
-      ? overlayTitle.getBoundingClientRect().width
-      : 110;
-
-    const w = 88;
-    const h = 38;
-    const x = 10;
-    const y = 14;
+    const { x, y, w, h } = PAUSE_BTN;
 
     return (
       app.pointer.x >= x &&
@@ -378,22 +379,6 @@
   function setValueText(id, value) {
     const el = document.getElementById(id);
     if (el) el.textContent = String(value);
-  }
-
-  function bindRange(id, onInput, formatter = (v) => v) {
-    const el = document.getElementById(id);
-    if (!el) return null;
-
-    el.addEventListener("input", () => {
-      onInput(Number(el.value));
-    });
-
-    return {
-      el,
-      set(valueId, value) {
-        setValueText(valueId, formatter(value));
-      },
-    };
   }
 
   function setupSettingsUI(app) {
@@ -428,7 +413,7 @@
 
     if (state.controls.grid) {
       state.controls.grid.addEventListener("input", () => {
-        const next = clamp(Number(state.controls.grid.value) || 4, 2, 25);
+        const next = clamp(Number(state.controls.grid.value) || 4, 2, 16);
         state.n = next;
         setValueText("grid-value", next);
         rebuildCurves(app);
@@ -488,7 +473,10 @@
     },
 
     onResize(app) {
-      rebuildCurves(app);
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => {
+        rebuildCurves(app);
+      }, 120);
     },
 
     onPointerDown(app) {
@@ -565,7 +553,7 @@
         rgb,
       );
 
-      drawPauseButton(ctx, app);
+      drawPauseButton(ctx);
 
       ctx.save();
       ctx.fillStyle = "rgba(255,255,255,0.9)";
@@ -579,11 +567,6 @@
       ctx.fillText(`Curve: ${xRatio} to ${yRatio}`, 10, 56);
       ctx.fillText(`Ratio: ${xRatio}:${yRatio}`, 10, 86);
       ctx.restore();
-
-      if (state.pause) {
-        ctx.save();
-        ctx.restore();
-      }
     },
   });
 })();
