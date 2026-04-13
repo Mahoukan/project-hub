@@ -4,7 +4,7 @@ A collection of interactive experiments, visual projects, and small game prototy
 
 **Live Site**
 
-👉 [[https://mahoukan.github.io/project-hub/](url)](https://mahoukan.github.io/project-hub/)
+👉 Live Site(url)](https://mahoukan.github.io/project-hub/)
 
 **About**
 
