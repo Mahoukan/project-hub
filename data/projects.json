@@ -184,6 +184,16 @@
     ],
     "featured": true,
     "status": "prototype",
-    "order": 7
+    "order": 7,
+  "controls": [
+    "Click the left side to go to the previous pattern",
+    "Click the right side to go to the next pattern",
+    "Click the top centre reset area to return to normal",
+    "Open the menu to switch sprite sets and recolour the tiles"
+  ],
+  "notes": [
+    "Uses p5.js instead of the custom canvas boot system",
+    "Recoloured sprites are cached for better performance"
+  ]
   }
 ]
