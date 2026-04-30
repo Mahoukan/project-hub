@@ -1,0 +1,32 @@
+.project-stage {
+  background: #000;
+  position: relative;
+  overflow: hidden;
+}
+
+#p5-stage {
+  width: 100%;
+  height: 100%;
+  min-height: 70vh;
+  position: relative;
+  overflow: hidden;
+  background: #000;
+}
+
+#p5-stage canvas {
+  display: block;
+}
+
+#p5-stage input[type="color"] {
+  position: absolute;
+  z-index: 20;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  #p5-stage {
+    min-height: 60vh;
+  }
+}

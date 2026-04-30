@@ -6,7 +6,11 @@
     "longDescription": "This is a relaxing snowfall scene where snowflakes drift down the screen at different speeds and sizes. You can interact with it by clicking or dragging to push the snow around and create little bursts. It is designed to feel smooth and responsive on any screen size.",
     "path": "./projects/snow-particles/index.html",
     "thumbnail": "images/thumbnails/snow.png",
-    "tags": ["visual", "interactive", "Phone-optimised"],
+    "tags": [
+      "visual",
+      "interactive",
+      "Phone-optimised"
+    ],
     "featured": true,
     "status": "prototype",
     "order": 1,
@@ -28,7 +32,12 @@
     "longDescription": "This project lets you explore rose curves, which are patterns created using maths. You can switch between different shapes, adjust how they are drawn, and watch them animate smoothly. It is part visual tool and part experiment.",
     "path": "./projects/rose-curves-advanced/index.html",
     "thumbnail": "images/thumbnails/rose.png",
-    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
+    "tags": [
+      "maths",
+      "visual",
+      "interactive",
+      "Phone-optimised"
+    ],
     "featured": true,
     "status": "experimental",
     "order": 2,
@@ -51,7 +60,12 @@
     "longDescription": "This project draws a rotating set of points around a circle and connects every point to every other point, creating changing geometric patterns. You can adjust the number of points, change the rotation speed, toggle trails, and fill the polygon for different visual effects.",
     "path": "./projects/polygon-network/index.html",
     "thumbnail": "images/thumbnails/polygon_network.png",
-    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
+    "tags": [
+      "maths",
+      "visual",
+      "interactive",
+      "Phone-optimised"
+    ],
     "featured": true,
     "status": "experimental",
     "order": 3,
@@ -79,7 +93,12 @@
     "longDescription": "Each curve comes from pairing two motion ratios and drawing the result progressively. After finishing, it pauses briefly, fades out, and moves to the next ratio. The curve stays centred and fills most of the screen, with a faint guide to help track the motion.",
     "path": "./projects/harmonic-grid-curves/index.html",
     "thumbnail": "images/thumbnails/harmonic_grid_curves.png",
-    "tags": ["maths", "visual", "interactive", "Phone-optimised"],
+    "tags": [
+      "maths",
+      "visual",
+      "interactive",
+      "Phone-optimised"
+    ],
     "featured": true,
     "status": "experimental",
     "order": 4,
@@ -100,7 +119,12 @@
     "longDescription": "Use the red, green, and blue sliders to match the target colour as closely as you can. When the round ends, your score is based on how close your colour was. You can change the difficulty, submit early, and try to beat your high score.",
     "path": "./projects/rgb-colour-match/index.html",
     "thumbnail": "images/thumbnails/rgb_colour_match.png",
-    "tags": ["interactive", "game", "colour", "Multi-device optimised"],
+    "tags": [
+      "interactive",
+      "game",
+      "colour",
+      "Multi-device optimised"
+    ],
     "featured": true,
     "status": "prototype",
     "order": 5,
@@ -124,7 +148,12 @@
     "longDescription": "Zenith is a top-down survival game where you move, survive, and slowly turn your build into something stronger. You auto-fire at enemies while trying to stay alive long enough to level up and choose new upgrades. As more enemy types appear and the pace increases, runs become more chaotic and build choices start to matter more.",
     "path": "./projects/zenith/index.html",
     "thumbnail": "images/thumbnails/zenith.png",
-    "tags": ["game", "survival", "arcade", "pc optimised"],
+    "tags": [
+      "game",
+      "survival",
+      "arcade",
+      "pc optimised"
+    ],
     "featured": true,
     "status": "in development",
     "order": 6,
@@ -138,6 +167,34 @@
       "Focused on movement, survival, and upgrade choices",
       "Must have desktop display scaling set to 100% otherwise game will break",
       "Still being balanced and polished"
+    ]
+  },
+  {
+    "slug": "tile-patterns",
+    "title": "Tile Patterns",
+    "description": "Cycle through animated tile patterns with recolourable sprite sets.",
+    "longDescription": "This project creates a full-screen grid of rotating tile sprites. You can cycle through different procedural patterns, switch between sprite sets, and recolour the light and dark parts of the sprites using colour pickers.",
+    "path": "./projects/tile-patterns/index.html",
+    "thumbnail": "images/thumbnails/tile_patterns.png",
+    "tags": [
+      "visual",
+      "interactive",
+      "p5js",
+      "Phone-optimised"
+    ],
+    "featured": true,
+    "status": "prototype",
+    "order": 7,
+    "controls": [
+      "Click the left side to go to the previous pattern",
+      "Click the right side to go to the next pattern",
+      "Click the top centre reset area to return to normal",
+      "Open the menu to switch sprite sets and recolour the tiles"
+    ],
+    "notes": [
+      "Uses p5.js instead of the custom canvas boot system",
+      "Requires the band, fill, and merge sprite images to be in the project folder",
+      "Recoloured sprites are cached for better performance"
     ]
   }
 ]
