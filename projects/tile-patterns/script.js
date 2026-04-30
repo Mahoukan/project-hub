@@ -80,8 +80,8 @@ function setup() {
 }
 
 function setupColourPickers() {
-  lightPicker = createColorPicker("#4cc9ff");
-  darkPicker  = createColorPicker("#C0E3F5");
+  lightPicker = createColorPicker("#0a2f3f");
+  darkPicker  = createColorPicker("#bdd7e4");
   clearRecolorCache();
 
   lightPicker.size(PICKER_SIZE, PICKER_SIZE);
@@ -469,17 +469,17 @@ function drawBorders() {
 function drawHelpOverlay() {
   if (frameCount > START_HELP_FRAMES) return;
 
-  let alpha = map(frameCount, 0, START_HELP_FRAMES, 170, 0);
+  let alpha = map(frameCount, 0, START_HELP_FRAMES, 255, 0);
 
   noStroke();
 
-  fill(255, alpha * 0.35);
+  fill(255, alpha * 0.75);
   rect(0, 0, width / 2, height);
 
-  fill(255, alpha * 0.2);
+  fill(255, alpha * 0.7);
   rect(width / 2, 0, width / 2, height);
 
-  fill(255, alpha * 0.5);
+  fill(255, alpha * 0.7);
   rect(
     width / 2 - RESET_ZONE_WIDTH / 2,
     0,
@@ -487,7 +487,7 @@ function drawHelpOverlay() {
     RESET_ZONE_HEIGHT
   );
 
-  fill(255, alpha);
+  fill(0, alpha);
   textSize(24);
   text("Previous Pattern", width * 0.25, height / 2);
   text("Next Pattern", width * 0.75, height / 2);

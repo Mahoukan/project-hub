@@ -172,8 +172,8 @@
   {
     "slug": "tile-patterns",
     "title": "Tile Patterns",
-    "description": "Cycle through animated tile patterns with recolourable sprite sets.",
-    "longDescription": "This project creates a full-screen grid of rotating tile sprites. You can cycle through different procedural patterns, switch between sprite sets, and recolour the light and dark parts of the sprites using colour pickers.",
+    "description": "Cycle through modifiable animated tile patterns",
+    "longDescription": "This project creates a grid of rotating tiles. You can cycle through different patterns, switch between tile sets, and recolour the tiles.",
     "path": "./projects/tile-patterns/index.html",
     "thumbnail": "images/thumbnails/tile_patterns.png",
     "tags": [
@@ -184,17 +184,6 @@
     ],
     "featured": true,
     "status": "prototype",
-    "order": 7,
-    "controls": [
-      "Click the left side to go to the previous pattern",
-      "Click the right side to go to the next pattern",
-      "Click the top centre reset area to return to normal",
-      "Open the menu to switch sprite sets and recolour the tiles"
-    ],
-    "notes": [
-      "Uses p5.js instead of the custom canvas boot system",
-      "Requires the band, fill, and merge sprite images to be in the project folder",
-      "Recoloured sprites are cached for better performance"
-    ]
+    "order": 7
   }
 ]
