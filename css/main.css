@@ -5,21 +5,24 @@
   --panel-hover: rgba(18, 28, 48, 0.96);
 
   --border: rgba(0, 245, 255, 0.25);
-  --border-strong: rgba(255, 0, 255, 0.4);
+  --border-strong: rgba(255, 0, 255, 0.42);
 
   --text: #e0f7ff;
   --muted: #94a3b8;
 
-  --accent: #00f5ff;        /* cyan */
-  --accent-2: #ff00ff;      /* magenta */
-
+  --accent: #00f5ff;
+  --accent-2: #ff00ff;
   --accent-soft: rgba(0, 245, 255, 0.12);
   --accent-soft-2: rgba(255, 0, 255, 0.12);
 
   --thumb-bg: #0f172a;
+  --tag-text: #dffcff;
 
   --shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
-  --shadow-hover: 0 20px 50px rgba(0, 0, 0, 0.8);
+  --shadow-hover:
+    0 0 18px rgba(0, 245, 255, 0.22),
+    0 0 32px rgba(255, 0, 255, 0.16),
+    0 20px 50px rgba(0, 0, 0, 0.82);
 }
 
 * {
@@ -66,13 +69,13 @@ button:focus-visible {
 .site-header {
   padding: 64px 20px 30px;
   border-bottom: 1px solid var(--border);
-  background: radial-gradient(
-      circle at top left,
-      var(--accent-soft),
-      transparent 28%
-    ),
-    radial-gradient(circle at 80% 0%, var(--accent-soft-2), transparent 24%),
-    var(--panel);
+  background:
+    linear-gradient(90deg, rgba(0, 245, 255, 0.15), transparent 30%),
+    linear-gradient(270deg, rgba(255, 0, 255, 0.15), transparent 30%),
+    rgba(5, 7, 13, 0.9);
+  box-shadow:
+    0 0 25px rgba(0, 245, 255, 0.15),
+    inset 0 -1px 0 rgba(255, 0, 255, 0.2);
 }
 
 .header-inner,
