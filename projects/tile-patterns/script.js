@@ -94,24 +94,25 @@ function setupColourPickers () {
   hideColourPickers()
 }
 
-function updatePickerPositions () {
-  const stage = document.getElementById('p5-stage')
-  const rect = stage.getBoundingClientRect()
+function updatePickerPositions() {
+  const stage = document.getElementById("p5-stage");
+  const rect = stage.getBoundingClientRect();
 
-  let pickerX = rect.left + MENU_X + PICKER_X_OFFSET
+  let pickerX = window.scrollX + rect.left + MENU_X + PICKER_X_OFFSET;
 
   let lightY =
+    window.scrollY +
     rect.top +
     MENU_Y +
     MENU_BUTTON_SIZE +
     MENU_GAP +
     3 * (MENU_ITEM_HEIGHT + MENU_GAP) +
-    12
+    12;
 
-  let darkY = lightY + MENU_ITEM_HEIGHT + MENU_GAP
+  let darkY = lightY + MENU_ITEM_HEIGHT + MENU_GAP;
 
-  lightPicker.position(pickerX, lightY)
-  darkPicker.position(pickerX, darkY)
+  lightPicker.position(pickerX, lightY);
+  darkPicker.position(pickerX, darkY);
 }
 
 function showColourPickers () {
