@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Zenith - Fullscreen</title>
+
+  <style>
+    html,
+    body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: black;
+    }
+
+    #canvas {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+      overflow: hidden;
+      background: black;
+    }
+
+    #canvas canvas {
+      display: block;
+      width: 100% !important;
+      height: 100% !important;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- IMPORTANT: this must be a DIV, not a canvas -->
+  <div id="canvas"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/p5@1.9.3/lib/p5.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/addons/p5.sound.min.js"></script>
+
+  <script src="./classes/Bullet.js"></script>
+  <script src="./classes/Enemy.js"></script>
+  <script src="./classes/Player.js"></script>
+  <script src="./script.js"></script>
+</body>
+</html>

@@ -1,122 +1,128 @@
 <!DOCTYPE html>
 <html lang="en">
-    <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>Loading...</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Loading...</title>
 
-        <link rel="stylesheet" href="../../css/project-layout.css" />
-        <link rel="stylesheet" href="./style.css" />
-    </head>
+    <link rel="stylesheet" href="../../css/project-layout.css" />
+    <link rel="stylesheet" href="./style.css" />
+  </head>
 
-    <body data-project-slug="rgb-colour-match">
-        <div class="project-shell">
-            <header class="project-header">
-                <a class="back-link" href="../../index.html">← Back to hub</a>
-
-                <div class="project-meta">
-                    <h1 id="project-title">Loading...</h1>
-                    <p id="project-description">Loading project
-                        description...</p>
-                </div>
-            </header>
-
-            <main class="project-main">
-                <section class="project-stage project-stage--stacked">
-                    <div class="canvas-wrap">
-                        <canvas id="canvas"></canvas>
-
-                    </div>
-
-                    <section class="game-controls" aria-label="Game controls">
-                        <div class="controls-grid">
-                            <div class="control-group">
-                                <div class="control-header">
-                                    <label class="control-label"
-                                        for="slider-r">Red</label>
-                                    <span id="value-r"
-                                        class="control-value">127</span>
-                                </div>
-                                <input id="slider-r" type="range" min="0"
-                                    max="255" value="127" />
-                            </div>
-
-                            <div class="control-group">
-                                <div class="control-header">
-                                    <label class="control-label"
-                                        for="slider-g">Green</label>
-                                    <span id="value-g"
-                                        class="control-value">127</span>
-                                </div>
-                                <input id="slider-g" type="range" min="0"
-                                    max="255" value="127" />
-                            </div>
-
-                            <div class="control-group">
-                                <div class="control-header">
-                                    <label class="control-label"
-                                        for="slider-b">Blue</label>
-                                    <span id="value-b"
-                                        class="control-value">127</span>
-                                </div>
-                                <input id="slider-b" type="range" min="0"
-                                    max="255" value="127" />
-                            </div>
-
-                            <div class="control-group">
-                                <label class="control-label"
-                                    for="difficulty">Difficulty</label>
-                                <select id="difficulty">
-                                    <option value="3600">Easy (60s)</option>
-                                    <option value="1800" selected>Normal
-                                        (30s)</option>
-                                    <option value="900">Hard (15s)</option>
-                                </select>
-                            </div>
-
-                            <div class="control-group control-group--buttons">
-                                <button id="btn-done"
-                                    class="action-btn">Done</button>
-                                <button id="btn-reset"
-                                    class="action-btn secondary">Reset</button>
-                            </div>
-                        </div>
-                    </section>
-                </section>
-
-                <!-- SIDEBAR -->
-                <aside class="project-sidebar">
-                    <section class="sidebar-block">
-                        <h2>About</h2>
-                        <p id="project-long-description">Loading project
-                            details...</p>
-                    </section>
-
-                    <section class="sidebar-block">
-                        <h2>Tags</h2>
-                        <div id="project-tags" class="sidebar-tags"></div>
-                    </section>
-
-                    <section class="sidebar-block">
-                        <h2>Controls</h2>
-                        <ul id="project-controls"></ul>
-                    </section>
-
-                    <section class="sidebar-block">
-                        <h2>Notes</h2>
-                        <ul id="project-notes"></ul>
-                    </section>
-
-                    <section class="sidebar-block">
-                        <h2>Status</h2>
-                        <p id="project-status">Loading status...</p>
-                    </section>
-                </aside>
-            </main>
+  <body data-project-slug="rgb-colour-match">
+    <div class="project-shell">
+      <header class="project-header">
+        <a class="back-link" href="../../index.html">← Back to hub</a>
+        <a class="fullscreen-link" href="./fullscreen.html" target="_blank">
+          ⛶ Full Screen
+        </a>
+        <div class="project-meta">
+          <h1 id="project-title">Loading...</h1>
+          <p id="project-description">Loading project description...</p>
         </div>
+      </header>
 
-        <script src="../../js/project-page.js"></script>
-        <script src="../../js/project-boot.js"></script>
-        <script src="./script.js"></script>
-    </body>
+      <main class="project-main">
+        <section class="project-stage project-stage--stacked">
+          <div class="canvas-wrap">
+            <canvas id="canvas"></canvas>
+          </div>
+
+          <section class="game-controls" aria-label="Game controls">
+            <div class="controls-grid">
+              <div class="control-group">
+                <div class="control-header">
+                  <label class="control-label" for="slider-r">Red</label>
+                  <span id="value-r" class="control-value">127</span>
+                </div>
+                <input
+                  id="slider-r"
+                  type="range"
+                  min="0"
+                  max="255"
+                  value="127"
+                />
+              </div>
+
+              <div class="control-group">
+                <div class="control-header">
+                  <label class="control-label" for="slider-g">Green</label>
+                  <span id="value-g" class="control-value">127</span>
+                </div>
+                <input
+                  id="slider-g"
+                  type="range"
+                  min="0"
+                  max="255"
+                  value="127"
+                />
+              </div>
+
+              <div class="control-group">
+                <div class="control-header">
+                  <label class="control-label" for="slider-b">Blue</label>
+                  <span id="value-b" class="control-value">127</span>
+                </div>
+                <input
+                  id="slider-b"
+                  type="range"
+                  min="0"
+                  max="255"
+                  value="127"
+                />
+              </div>
+
+              <div class="control-group">
+                <label class="control-label" for="difficulty">Difficulty</label>
+                <select id="difficulty">
+                  <option value="3600">Easy (60s)</option>
+                  <option value="1800" selected>Normal (30s)</option>
+                  <option value="900">Hard (15s)</option>
+                </select>
+              </div>
+
+              <div class="control-group control-group--buttons">
+                <button id="btn-done" class="action-btn">Done</button>
+                <button id="btn-reset" class="action-btn secondary">
+                  Reset
+                </button>
+              </div>
+            </div>
+          </section>
+        </section>
+
+        <!-- SIDEBAR -->
+        <aside class="project-sidebar">
+          <section class="sidebar-block">
+            <h2>About</h2>
+            <p id="project-long-description">Loading project details...</p>
+          </section>
+
+          <section class="sidebar-block">
+            <h2>Tags</h2>
+            <div id="project-tags" class="sidebar-tags"></div>
+          </section>
+
+          <section class="sidebar-block">
+            <h2>Controls</h2>
+            <ul id="project-controls"></ul>
+          </section>
+
+          <section class="sidebar-block">
+            <h2>Notes</h2>
+            <ul id="project-notes"></ul>
+          </section>
+
+          <section class="sidebar-block">
+            <h2>Status</h2>
+            <p id="project-status">Loading status...</p>
+          </section>
+        </aside>
+      </main>
+    </div>
+
+    <script src="../../js/project-page.js"></script>
+    <script src="../../js/project-boot.js"></script>
+    <script src="./script.js"></script>
+  </body>
 </html>
