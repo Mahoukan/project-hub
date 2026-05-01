@@ -177,3 +177,26 @@ a {
     grid-template-columns: 1fr;
   }
 }
+.fullscreen-link {
+  display: inline-block;
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  margin-left: 10px;
+
+  transition:
+    border-color 0.18s ease,
+    background 0.18s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.fullscreen-link:hover {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  transform: translateY(-1px);
+  box-shadow:
+    0 0 12px var(--accent),
+    0 0 24px var(--accent-2);
+}
