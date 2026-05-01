@@ -80,8 +80,8 @@ function setup () {
 }
 
 function setupColourPickers () {
-  lightPicker = createColorPicker('#0a2f3f')
-  darkPicker = createColorPicker('#bdd7e4')
+  darkPicker = createColorPicker('#c8e6f9')
+  lightPicker = createColorPicker('#00bfff')
   clearRecolorCache()
 
   lightPicker.size(PICKER_SIZE, PICKER_SIZE)
